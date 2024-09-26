@@ -24,14 +24,18 @@ public class TransacionService {
 
     private static final Logger logger = LoggerFactory.getLogger(TransacionService.class);
 
-    @Autowired
-    private AcctRepo acctRepo;
+    private final AcctRepo acctRepo;
+
+    private final TransactionRepo trRepo;
+
+    private final AddAccountService jsonSrv;
 
     @Autowired
-    private TransactionRepo trRepo;
-
-    @Autowired
-    AddAccountService jsonSrv;
+    public TransacionService(AcctRepo acctRepo, TransactionRepo trRepo, AddAccountService jsonSrv) {
+        this.acctRepo = acctRepo;
+        this.trRepo = trRepo;
+        this.jsonSrv = jsonSrv;
+    }
 
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRED)
     public OutcomeType processRequest(TransferRequestType req) {

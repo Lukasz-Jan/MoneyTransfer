@@ -21,8 +21,12 @@ public class CloseController {
 
     public static final Logger log = LoggerFactory.getLogger(CloseController.class);
 
+    private final ApplicationContext context;
+
     @Autowired
-    private ApplicationContext context;
+    public CloseController(ApplicationContext context) {
+        this.context = context;
+    }
 
     @RequestMapping("/close")
     public void close() {

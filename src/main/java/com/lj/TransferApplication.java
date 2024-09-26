@@ -52,7 +52,6 @@ public class TransferApplication {
     public static void main(String[] args) throws InterruptedException {
 
         System.out.println("args.length: " + args.length);
-        System.out.println("args.length: " + args.length);
 
         ConfigurableApplicationContext appCtx = SpringApplication.run(TransferApplication.class, args);
     }

@@ -39,7 +39,7 @@ public class AddAccountServiceIT {
 
 
     /*
-     * Data is loaded from file initAmountsForTest.json whiele application starts
+     * Data is loaded from file initAmountsForTest.json while application starts
      * File path:
      * fileWithAccountsInitPath=src/test/resources/initAmountsForTest.json
      * file is set in application.properties in src\test\resources directory

@@ -23,7 +23,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -36,10 +35,10 @@ import com.lj.gen.json.mappings.transfer.TransfersystemSchema;
 
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class AddAccountService_ChangeAmountForAccount_Test {
+public class AddAccountServiceChangeAmountForAccountTest {
 
-    private String testedFileWithDataString = "src/test/resources/initDataForChangeAmountTest.json";
-    private String tempFileForTest = "src/test/resources/tempDataForChangeAmountTest.json";
+    private final String testedFileWithDataString = "src/test/resources/initDataForChangeAmountTest.json";
+    private final String tempFileForTest = "src/test/resources/tempDataForChangeAmountTest.json";
 
     @Mock
     private AcctRepo acctRepoMock;
@@ -81,7 +80,7 @@ public class AddAccountService_ChangeAmountForAccount_Test {
         File fileWithAccountsDataAfterChange = new File(testedFileWithDataString);
         TransfersystemSchema transfer = null;
 
-        try (final InputStream streamWithJson = new FileInputStream(fileWithAccountsDataAfterChange)) {
+        try (final InputStream streamWithJson = Files.newInputStream(fileWithAccountsDataAfterChange.toPath())) {
 
             transfer = mapper.readValue(streamWithJson, TransfersystemSchema.class);
         } catch (IOException e1) {
@@ -147,7 +146,7 @@ public class AddAccountService_ChangeAmountForAccount_Test {
         File fileWithAccountsDataAfterChange = new File(testedFileWithDataString);
         TransfersystemSchema transfer = null;
 
-        try (final InputStream streamWithJson = new FileInputStream(fileWithAccountsDataAfterChange)) {
+        try (final InputStream streamWithJson = Files.newInputStream(fileWithAccountsDataAfterChange.toPath())) {
 
             transfer = mapper.readValue(streamWithJson, TransfersystemSchema.class);
         } catch (IOException e1) {

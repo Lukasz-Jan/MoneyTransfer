@@ -29,7 +29,8 @@ import com.lj.entity.*;
 public class AddAccountService {
 
     private static final Logger logger = LoggerFactory.getLogger(AddAccountService.class);
-    private AcctRepo accountRepo;
+
+    private final AcctRepo accountRepo;
 
     private final File fileWithAccountsData;
 

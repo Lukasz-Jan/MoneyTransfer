@@ -1,11 +1,12 @@
 package com.lj.jms;
 
 import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
@@ -37,10 +38,12 @@ import com.lj.jms.response.ResponseService;
 public class MessageListenerAdapter implements MessageListener {
 
     private static final Logger logger = LoggerFactory.getLogger(MessageListenerAdapter.class);
-    private Schema requestResponseSchema;
 
-    private TransacionService trSrv;
-    private ResponseService respSrv;
+    private final Schema requestResponseSchema;
+
+    private final TransacionService trSrv;
+
+    private final ResponseService respSrv;
 
     @Autowired
     public MessageListenerAdapter(TransacionService trSrv, ResponseService respSrv, @Value("${messageXsd}") String requestResponseXsdPath) {
@@ -50,15 +53,16 @@ public class MessageListenerAdapter implements MessageListener {
 
         SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
         StreamSource source = null;
+        Schema requestResponseSchemaTemp = null;
 
-        try(InputStream inputStream = new FileInputStream(requestResponseXsdPath)) {
+        try(InputStream inputStream = Files.newInputStream(Paths.get(requestResponseXsdPath))) {
 
             source = new StreamSource(	new InputStreamReader(inputStream, StandardCharsets.UTF_8)	);
-            requestResponseSchema = schemaFactory.newSchema(source);
+            requestResponseSchemaTemp = schemaFactory.newSchema(source);
         } catch (IOException | SAXException e2) {
-
-            logger.info("IO exception while xsd reading");
+            logger.error("IO exception while xsd reading for " + requestResponseXsdPath);
         }
+        requestResponseSchema = requestResponseSchemaTemp;
     }
 
     @JmsListener(destination = "${srcQueue}")
@@ -93,7 +97,10 @@ public class MessageListenerAdapter implements MessageListener {
 
             JAXBContext ctx = JAXBContext.newInstance(TransferRequestType.class);
             Unmarshaller u = ctx.createUnmarshaller();
-            u.setSchema(requestResponseSchema);
+
+            if(requestResponseSchema != null) {
+                u.setSchema(requestResponseSchema);
+            }
 
             final XMLInputFactory xif = XMLInputFactory.newInstance();
 
@@ -108,11 +115,15 @@ public class MessageListenerAdapter implements MessageListener {
         } finally {
 
             try {
-                inputStream.close();
-                reader.close();
+                if (inputStream != null) {
+                    inputStream.close();
+                }
+                if (reader != null) {
+                    reader.close();
+                }
             } catch (IOException | XMLStreamException e) {
                 logger.error(e.toString());
-                return null;
+                requestInstance = null;
             }
         }
         return requestInstance;
