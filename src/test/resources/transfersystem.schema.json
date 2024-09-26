@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
+  "$id": "http://www.example.com/exercises/transfersystem/transfersystem.schema.json",
+  "title": "Transfer System",
+  "description": "An object containing entries mapping account-ids to zero or more currency quantities",
+  "type": "object",
+  "properties": {
+    "accounts": {
+      "$ref": "#/$defs/Accounts"
+    }
+  },
+  "$defs": {
+    "Accounts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Account"
+      }
+    },
+    "Account": {
+      "type": "object",
+      "properties": {
+        "accountNumber": {
+          "type": "string",
+          "pattern": "^\\d+$"
+        },
+        "currencyAmounts": {
+          "$ref": "#/$defs/CurrencyAmounts"
+        }
+      }
+    },
+    "CurrencyAmounts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/CurrencyAmount"
+      }
+    },
+    "CurrencyAmount": {
+      "type": "object",
+      "properties": {
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$"
+        },
+        "amount": {
+          "type": "number"
+        }
+      }
+    }
+  }
+}

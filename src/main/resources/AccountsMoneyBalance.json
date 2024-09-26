@@ -1,0 +1,45 @@
+{
+  "accounts": [
+    {
+      "accountNumber": "000142006678",
+      "currencyAmounts": [
+        {
+          "currency": "SEK",
+          "amount": 90.00
+        },
+
+        {
+          "currency": "PLN",
+          "amount": 0.01
+        }
+      ]
+    },
+    {
+      "accountNumber": "000056013005",
+      "currencyAmounts": [
+        {
+          "currency": "EUR",
+          "amount": 500
+        }
+      ]
+    },
+    {
+      "accountNumber": "100056013005",
+      "currencyAmounts": [
+        {
+          "currency": "USD",
+          "amount": 50000
+        }
+      ]
+    },
+    {
+      "accountNumber": "111122224010",
+      "currencyAmounts": [
+        {
+          "currency": "USD",
+          "amount": 200
+        }
+      ]
+    }
+  ]
+}

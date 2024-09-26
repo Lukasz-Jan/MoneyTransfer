@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+
+           elementFormDefault="qualified"
+           xmlns:trr="http://www.example.com/exercises/transfersystem/transfer-request-response.xsd"
+           targetNamespace="http://www.example.com/exercises/transfersystem/transfer-request-response.xsd"
+>
+
+    <xs:simpleType name="AccountNumberType">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="\d+"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="ActionType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="CREDIT"/>
+            <xs:enumeration value="DEBIT"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="CurrencyType">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[A-Z]{3}"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="OutcomeType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="ACCEPT"/>
+            <xs:enumeration value="REJECT"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="NonNegativeDecimal">
+        <xs:restriction base="xs:decimal">
+            <xs:minExclusive value="0"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="TransferRequestType">
+        <xs:sequence>
+            <xs:element name="RequestId" type="xs:string"/>
+            <xs:element name="TargetAccountNumber" type="trr:AccountNumberType"/>
+            <xs:element name="Action" type="trr:ActionType"/>
+            <xs:element name="Currency" type="trr:CurrencyType"/>
+            <xs:element name="Quantity" type="trr:NonNegativeDecimal"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="TransferResponseType">
+        <xs:sequence>
+            <xs:element name="RequestId" type="xs:string"/>
+            <xs:element name="TargetAccountNumber" type="trr:AccountNumberType"/>
+            <xs:element name="Action" type="trr:ActionType"/>
+            <xs:element name="Currency" type="trr:CurrencyType"/>
+            <xs:element name="Quantity" type="trr:NonNegativeDecimal"/>
+            <xs:element name="Outcome" type="trr:OutcomeType"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:element name="TransferRequest" type="trr:TransferRequestType"/>
+    <xs:element name="TransferResponse" type="trr:TransferResponseType"/>
+</xs:schema>
