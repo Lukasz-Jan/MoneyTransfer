@@ -6,6 +6,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -51,6 +53,7 @@ public class AddAccountService {
         TransfersystemSchema transfer = mapper.readValue(streamWithJson, TransfersystemSchema.class);
         List<com.lj.gen.json.mappings.transfer.Account> accounts = transfer.getAccounts();
 
+
         Date creationDate = new Date();
 
         for (com.lj.gen.json.mappings.transfer.Account acc : accounts) {
@@ -62,7 +65,7 @@ public class AddAccountService {
 
             for (CurrencyAmount currencyInAccount : currencyAmounts) {
                 BigDecimal amount = BigDecimal.valueOf(currencyInAccount.getAmount());
-                saveAccountAndAgreementsAndTransactions_Cascade(currencyInAccount.getCurrency(), amount, accountNo,
+                saveAccountAgreementsAndTransactions(currencyInAccount.getCurrency(), amount, accountNo,
                         creationDate);
             }
 
@@ -71,7 +74,7 @@ public class AddAccountService {
     }
 
 
-    private void saveAccountAndAgreementsAndTransactions_Cascade(String currency, BigDecimal amount, String acctNo,
+    private void saveAccountAgreementsAndTransactions(String currency, BigDecimal amount, String acctNo,
                                                                  Date creationDate) {
 
         Optional<Account> accountOpt = accountRepo.findById(acctNo);

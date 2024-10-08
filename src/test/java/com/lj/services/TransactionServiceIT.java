@@ -2,18 +2,28 @@ package com.lj.services;
 
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Optional;
 import java.util.Scanner;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 import javax.xml.bind.JAXBElement;
 
+import com.lj.dto.TransactionDto;
+import com.lj.entity.Account;
+import com.lj.entity.Transaction;
 import com.lj.repository.AcctRepo;
 import com.lj.repository.TransactionRepo;
 import com.lj.service.TransacionService;
+import com.lj.services.jsonutils.Utils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -33,14 +43,21 @@ import com.lj.gen.xsd.mappings.transfer.OutcomeType;
 import com.lj.gen.xsd.mappings.transfer.TransferRequestType;
 
 import com.lj.services.request.MoneyRequestBuilder;
+import org.springframework.test.annotation.DirtiesContext;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, classes = TransferApplication.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(OrderAnnotation.class)
-
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class TransactionServiceIT {
 
     private static final Logger logger = LoggerFactory.getLogger(TransactionServiceIT.class);
+
+    private final String initializationAccountDataPathStr;
+
+    private final File initializationDataFile;
+
+    private static final String TEMP_FILE_FOR_TEST = "src/test/resources/tempDataForTest.json";
 
     @Autowired
     private TransacionService requestSrv;
@@ -49,7 +66,15 @@ public class TransactionServiceIT {
     @Autowired
     private AcctRepo acctRepo;
 
-    private static final String TEMP_FILE_FOR_TEST = "src/test/resources/tempDataForTest.json";
+    private Utils jsonHelper;
+
+    public TransactionServiceIT(@Value("${fileWithAccountsInitPath}") String initializationAccountDataPathStr) {
+
+        this.initializationAccountDataPathStr = initializationAccountDataPathStr;
+        initializationDataFile = new File(initializationAccountDataPathStr);
+        if(!initializationDataFile.exists()) throw new RuntimeException();
+        jsonHelper = new Utils();
+    }
 
     @Autowired
     @Value("${fileWithAccountsInitPath}") String initializationAccountDataPath;
@@ -99,38 +124,61 @@ public class TransactionServiceIT {
      * Outcome-USD is processed for 777.55
      * Operation result is checked (type OutcomeType) and balance.
      */
+
     @Test
-    public void test_Outcome_Basic_Positive() {
+    public void test_Outcome_Basic_Positive() throws IOException {
 
         BigDecimal outcome = BigDecimal.valueOf(777.55);
-
-        String account = "100056013005";
+        String inputAcctId = "100056013005";
         String currency = "USD";
-        JAXBElement<TransferRequestType> buildReqEl = new MoneyRequestBuilder.Builder().setAcctNo(account).setAction(ActionType.DEBIT).setCurrency(currency).setQuantity(outcome).buildReqEl();
+
+        Predicate<TransactionDto> currencyEqualsL = el -> el.getSa().getCurrencyCd().equals(currency);
+
+        Set<TransactionDto> jsonTxs = jsonHelper.getTransactionsFromJsonForAcoountId(initializationDataFile, inputAcctId);
+
+        TransactionDto txJson = jsonTxs.stream()
+                .filter(currencyEqualsL)
+                .findAny()
+                .orElse(null);
+
+        BigDecimal initAmount = txJson.getCurAmt();
+
+        JAXBElement<TransferRequestType> buildReqEl = new MoneyRequestBuilder.Builder().setAcctNo(inputAcctId)
+                .setAction(ActionType.DEBIT).setCurrency(currency)
+                .setQuantity(outcome).buildReqEl();
 
         TransferRequestType req = buildReqEl.getValue();
 
-        ServiceAgreement saFound = acctRepo.findById(req.getTargetAccountNumber()).map(acct -> {
+        Account account = acctRepo.fetchAccountWithTransactions(inputAcctId);
 
-            ServiceAgreement saInner = acct.getAgreements().stream().filter(sa -> sa.getCurrencyCd().equals(currency)).findFirst().map(sa -> sa).orElse(null);
-            return saInner;
-        }).orElse(null);
+        Set<Transaction> txs = account.getAgreements().stream()
+                .filter(a -> a.getCurrencyCd().equals(currency))
+                .map(a -> a.getTransactions())
+                .findAny()
+                .orElse(null);
+        assertEquals(1, txs.size());
 
+        BigDecimal balanceBefore = txs.iterator().next().getCurAmt();
 
-        BigDecimal beforeOutcomeBalance = trRepo.findBySaId(saFound.getSaId()).stream().map(tr -> tr.getCurAmt()).reduce(BigDecimal.ZERO, BigDecimal::add);
+        assertEquals(0, initAmount.setScale(2).compareTo(balanceBefore));
 
-        assertEquals(BigDecimal.valueOf(50025.00).setScale(2), beforeOutcomeBalance);
-
-        System.out.println("Before: " + beforeOutcomeBalance);
+        System.out.println("Before: " + balanceBefore);
 
         OutcomeType outResult = requestSrv.processRequest(req);
         assertEquals(OutcomeType.ACCEPT, outResult);
 
-        BigDecimal afterOutcomeBalance = trRepo.findBySaId(saFound.getSaId()).stream().map(tr -> tr.getCurAmt()).reduce(BigDecimal.ZERO, BigDecimal::add);
+        Account accountAfterExpense = acctRepo.fetchAccountWithTransactions(inputAcctId);
 
-        BigDecimal afterIncomeShouldBe = beforeOutcomeBalance.subtract(outcome);
+        BigDecimal afterExpenseBalance = accountAfterExpense.getAgreements()
+                .stream()
+                .filter(a -> a.getCurrencyCd().equals(currency))
+                .flatMap(a -> a.getTransactions().stream())
+                .map(tx -> tx.getCurAmt())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        assertEquals(afterIncomeShouldBe, afterOutcomeBalance);
+
+        BigDecimal afterExpenseShouldBe = balanceBefore.subtract(outcome);
+        assertEquals(0, afterExpenseShouldBe.compareTo(afterExpenseBalance));
     }
 
     // Here no funds on account

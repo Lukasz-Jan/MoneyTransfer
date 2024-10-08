@@ -6,22 +6,33 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.lj.TransferApplication;
+import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import com.lj.dto.AccountDto;
+import com.lj.dto.TransactionDto;
+import com.lj.gen.json.mappings.transfer.CurrencyAmount;
 import com.lj.repository.*;
 import org.hibernate.LazyInitializationException;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.function.Executable;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import com.lj.entity.*;
-
+import com.lj.services.jsonutils.Utils;
+import org.springframework.test.annotation.DirtiesContext;
 
 // starting:
 //	mvn failsafe:integration-test
@@ -30,35 +41,64 @@ import com.lj.entity.*;
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, classes = TransferApplication.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(OrderAnnotation.class)
-public class AddAccountServiceIT {
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+public class AddAccountServiceIT implements TestCommons {
 
     @Autowired
     private SaRepo saRepo;
     @Autowired
     private AcctRepo acctRepo;
 
+    private final String initializationAccountDataPathStr;
+
+    private final File initializationDataFile;
+
+    @Autowired
+    public AddAccountServiceIT(@Value("${fileWithAccountsInitPath}") String initializationAccountDataPathStr) {
+
+        this.initializationAccountDataPathStr = initializationAccountDataPathStr;
+        initializationDataFile = new File(initializationAccountDataPathStr);
+        if(!initializationDataFile.exists()) throw new RuntimeException();
+    }
+
+    private Utils jsonHelper;
+
+    @BeforeAll
+    public void init() throws IOException {
+        jsonHelper = new Utils();
+    }
 
     /*
-     * Data is loaded from file initAmountsForTest.json while application starts
-     * File path:
-     * fileWithAccountsInitPath=src/test/resources/initAmountsForTest.json
-     * file is set in application.properties in src\test\resources directory
+     * Check if account was added while initial data loading
      */
     @Test
-    public void addAccountsTest() throws Throwable {
+    public void addAccountsTestIT() throws Throwable {
 
-        System.out.println("addAccountaddAccountTest");
-        Account acc = acctRepo.findById("999142006678").get();
+        String acctId = "999142006678";
+
+        com.lj.gen.json.mappings.transfer.Account accountJson = jsonHelper.getAccountFromJson(initializationDataFile, acctId);
+        assertNotNull(accountJson);
+
+        Account acc = acctRepo.findById(acctId).get();
         assertNotNull(acc);
+        assertEquals(accountJson.getAccountNumber(), acc.getAcctId());
+
+        List<CurrencyAmount> jsonAgreements = jsonHelper.getAllAgreementsFromJsonForAccountId(initializationDataFile, acctId);
+
         Set<ServiceAgreement> agreements = acc.getAgreements();
+        assertEquals(jsonAgreements.size(), agreements.size());
 
-        assertEquals(3, agreements.size());
+        for(ServiceAgreement sa: agreements) {
 
-        Optional<ServiceAgreement> saOpt = acc.getAgreements().stream().filter(sa -> sa.getCurrencyCd().equals("PLN")).findAny();
+            Predicate<String> sameAgreement = arg -> arg.equals(sa.getCurrencyCd());
 
+            Optional<String> jsonSaOpt = jsonAgreements.stream().map(cA -> cA.getCurrency())
+                    .filter(sameAgreement).findAny();
+            assertEquals(true, jsonSaOpt.isPresent());
+        }
+
+        Optional<ServiceAgreement> saOpt = acc.getAgreements().stream().filter(sa -> sa.getCurrencyCd().equals(currencyPLN)).findAny();
         ServiceAgreement sa = saOpt.get();
-
-        assertNotNull(sa);
 
         Executable exe = () -> sa.getTransactions().size();
 
@@ -66,78 +106,246 @@ public class AddAccountServiceIT {
     }
 
     /*
-     * Integration test Starts app context Sarting app context initaializes accounts
-     * Data from file initAmountsForTest.json Check is done if agreements were
-     * fetched for all accounts
-     *
-     * one -> many account -> agreements
-     *
-     * No lazy initialization exception is thrown
+     * CurrencyAmount-s for currency are fetched from initial json file.
+     * Check if there are corresponding currency-agreements in database.
      */
     @Test
-    public void testForJoinFetchIT() {
+    public void testForJoinFetchIT() throws IOException {
 
-        System.out.println("testForJoinFetchIT()");
-        Iterable<Account> findAllIter = acctRepo.findAll();
+        Set<Account> accounts = acctRepo.findAll();
+        Set<AccountDto> accountSet = jsonHelper.getAllAccountsByFile(initializationDataFile);
+        assertEquals(accounts.size(), accountSet.size());
 
-        for (Account acc : findAllIter) {
+        List<ServiceAgreement> agreements = accounts.stream().flatMap(acc -> acc.getAgreements().stream()).collect(Collectors.toList());
+        Set<CurrencyAmount> agreementsFromJson = jsonHelper.getAllAgreementsFromJson(initializationDataFile);
 
-            int size = acc.getAgreements().size();
-            assertTrue(size > 0);
+        assertEquals(agreements.size(), agreementsFromJson.size());
+
+        for(ServiceAgreement agr: agreements) {
+
+            String currencyCd = agr.getCurrencyCd();
+            Optional<CurrencyAmount> currencyAmount = agreementsFromJson.stream().filter(jAgr -> jAgr.getCurrency().equals(currencyCd)).findAny();
+
+            assertEquals(true, currencyAmount.isPresent());
         }
     }
 
     /*
-     * one account 100056013005 has One income with amount currency for sa is
-     * checked one entrance is made in initialization file at startup for the same
-     * currency total amount for sa is checked after initialization if amount was
-     * the same should be considered as doubled
+     * Checking data for test account 100056013005
      */
 
     @Test
-    public void accountFromAgreementIT() {
+    public void accountFromAgreementIT() throws IOException {
 
-        System.out.println("accountFromAgreementIT()");
-
-        // data in file example-transfer-systemTest.json
-        Optional<Account> accountOpt = acctRepo.findById("100056013005");
-
+        String acctId = "100056013005";
+        Optional<Account> accountOpt = acctRepo.findById(acctId);
         assertNotNull(accountOpt.get());
 
-        Set<ServiceAgreement> sas = accountOpt.map(acc -> acc.getAgreements()).orElse(null);
-        assertEquals(sas.size(), 1);
+        Set<ServiceAgreement> saSet = accountOpt.map(acc -> acc.getAgreements()).orElse(null);
 
-        ServiceAgreement sa = sas.iterator().next();
+        List<CurrencyAmount> jsonAgreements = jsonHelper.getAllAgreementsFromJsonForAccountId(initializationDataFile, acctId);
 
-        assertEquals(sa.getCurrencyCd(), "USD");
+        assertEquals(saSet.size(), jsonAgreements.size());
 
-        Long saId = sa.getSaId();
+        String saCurrencyCd = saSet.iterator().next().getCurrencyCd();
 
-        Set<Transaction> saTransactions = saRepo.findById(saId).map(saFound -> saFound.getTransactions()).orElse(null);
+        String jsonCurrency = jsonAgreements.iterator().next().getCurrency();
 
-        assertEquals(saTransactions.size(), 1);
+        assertEquals(saCurrencyCd, jsonCurrency);
 
-        BigDecimal sumForSa = saTransactions.stream().map(t -> t.getCurAmt()).reduce(BigDecimal.ZERO, BigDecimal::add);
+        Long saId = saSet.iterator().next().getSaId();
 
-        assertEquals(new BigDecimal("50025.00").setScale(2), sumForSa);
+        Set<Transaction> txsSet = saRepo.findById(saId).map(saFound -> saFound.getTransactions()).orElse(null);
 
+        Set<TransactionDto> txsSetJson = jsonHelper.getTransactionsFromJsonForAcoountId(initializationDataFile, acctId);
+
+        assertEquals(txsSet.size(), txsSetJson.size());
+        assertEquals(1, txsSetJson.size());
+
+        //BigDecimal sumForSa = txsSet.stream().map(t -> t.getCurAmt()).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal saSum = txsSet.stream().map(Transaction::getCurAmt).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal jsonSum = txsSetJson.stream().map(TransactionDto::getCurAmt).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        assertEquals(jsonSum.setScale(2), saSum.setScale(2));
     }
 
     /*
-     * LAZY INITIALIZATION EXC One to many relation does not access transactions via
-     * sa too deep input data in file example-transfer-systemTest.json possible
-     * solution: https://vladmihalcea.com/hibernate-facts-multi-level-fetching/
-     *
-     * Account 100056013005 is found check if there is only one sa "USD" according
-     * to initAmountsForTest.json file.
-     * Going from Account to Transaction in JPA is
-     * not accessible so LazyInitializationException should be thrown
+     * Check for test account 999142006678
+     * The same data in database and in file.
+     */
+    @Test
+    public void fetchTransactionsByAccountIT() throws IOException {
+
+        String acctId = "999142006678";
+
+        Set<TransactionDto> txsDromJson = jsonHelper.getTransactionsFromJsonForAcoountId(initializationDataFile, acctId);
+
+        Account acc = acctRepo.fetchAccountWithTransactions(acctId);
+        List<Transaction> txs = acc.getAgreements().stream().flatMap(sa -> sa.getTransactions().stream()).collect(Collectors.toList());
+
+        assertEquals(txsDromJson.size(), txs.size());
+
+        List<TransactionDto> sekTxFromJson = txsDromJson.stream()
+                .filter(txDto -> txDto.getSa().getCurrencyCd()
+                        .equals(currencySEK)).collect(Collectors.toList());
+
+        assertEquals(1, sekTxFromJson.size());
+        List<Transaction> sekTxsListBase = acc.getAgreements().stream().
+                filter(a -> a.getCurrencyCd().equals(currencySEK)).flatMap(strA -> strA.getTransactions().stream()).collect(Collectors.toList());
+
+        assertEquals(1, sekTxsListBase.size());
+
+
+        for(TransactionDto txJson: sekTxFromJson) {
+
+            List<Transaction> txsFromBase = sekTxsListBase.stream()
+                    .filter(tx -> tx.getSa().getCurrencyCd().equals(currencySEK))
+                    .filter(tx -> (tx.getCurAmt().setScale(2).compareTo(txJson.getCurAmt()) == 0))
+                    .collect(Collectors.toList());
+
+            assertEquals(1, txsFromBase.size());
+
+            Transaction txBase = txsFromBase.get(0);
+
+            assertEquals(0, txJson.getCurAmt().compareTo(txBase.getCurAmt().setScale(2) )   );
+
+            assertEquals(txJson.getSa().getCurrencyCd(), txBase.getSa().getCurrencyCd());
+        }
+
+        List<TransactionDto> plnTxFromJson = txsDromJson.stream()
+                .filter(txDto -> txDto.getSa().getCurrencyCd().equals(currencyPLN))
+                .collect(Collectors.toList());
+        assertEquals(1, plnTxFromJson.size());
+
+        List<Transaction> plnTxListBase = acc.getAgreements().stream().
+                filter(a -> a.getCurrencyCd().equals(currencyPLN))
+                .flatMap(strA -> strA.getTransactions().stream())
+                .collect(Collectors.toList());
+        assertEquals(1, plnTxListBase.size());
+
+        for(TransactionDto txJson: plnTxFromJson) {
+
+            List<Transaction> txsFromBase = plnTxListBase.stream()
+                    .filter(tx -> tx.getSa().getCurrencyCd().equals(currencyPLN))
+                    .filter(tx -> (tx.getCurAmt().setScale(2).compareTo(txJson.getCurAmt()) == 0))
+                    .collect(Collectors.toList());
+
+            assertEquals(1, txsFromBase.size());
+
+            Transaction txBase = txsFromBase.get(0);
+
+            assertEquals(0, txJson.getCurAmt().compareTo(txBase.getCurAmt().setScale(2) )   );
+
+            assertEquals(txJson.getSa().getCurrencyCd(), txBase.getSa().getCurrencyCd());
+        }
+
+        List<TransactionDto> usdTxFromJson = txsDromJson.stream()
+                .filter(txDto -> txDto.getSa().getCurrencyCd().equals(currencyUSD))
+                .collect(Collectors.toList());
+        assertEquals(1, usdTxFromJson.size());
+
+        List<Transaction> usdTxListBase = acc.getAgreements().stream().
+                filter(a -> a.getCurrencyCd().equals(currencyUSD))
+                .flatMap(strA -> strA.getTransactions().stream())
+                .collect(Collectors.toList());
+        assertEquals(1, usdTxListBase.size());
+
+
+        for(TransactionDto txJson: usdTxFromJson) {
+
+            List<Transaction> txsFromBase = usdTxListBase.stream()
+                    .filter(tx -> tx.getSa().getCurrencyCd().equals(currencyUSD))
+                    .filter(tx -> (tx.getCurAmt().setScale(2).compareTo(txJson.getCurAmt()) == 0))
+                    .collect(Collectors.toList());
+
+            assertEquals(1, txsFromBase.size());
+
+            Transaction txBase = txsFromBase.get(0);
+
+            assertEquals(0, txJson.getCurAmt().compareTo(txBase.getCurAmt().setScale(2) )   );
+
+            assertEquals(txJson.getSa().getCurrencyCd(), txBase.getSa().getCurrencyCd());
+        }
+    }
+
+    private boolean equalFnc(String s1, String s2) {
+        return s1.equals(s2);
+    }
+
+    @Test
+    public void checkAllAccountsForRightDataIT() throws IOException {
+
+        Set<com.lj.gen.json.mappings.transfer.Account> fileAccounts = jsonHelper.getAllJsonAccounts(initializationDataFile);
+        Set<Account> accounts = acctRepo.findAll();
+        assertEquals(fileAccounts.size(), accounts.size());
+
+        for(com.lj.gen.json.mappings.transfer.Account fileAcc: fileAccounts) {
+
+            Predicate<String> isInFile = accStr -> equalFnc(accStr, fileAcc.getAccountNumber());
+            // check for one account
+            long accCount = accounts.stream().map(Account::getAcctId).filter(isInFile).count();
+            assertEquals(1, accCount);
+
+
+            String accountId = accounts.stream()
+                    .map(Account::getAcctId)
+                    .filter(isInFile)
+                    .findFirst().orElse(null);
+            assertNotNull(accountId);
+
+            Account account = acctRepo.fetchAccountWithTransactions(accountId);
+
+            assertNotNull(account);
+
+            // check for same no of currency agreements
+            List<CurrencyAmount> fileCurrencies = fileAcc.getCurrencyAmounts();
+            Set<ServiceAgreement> agreements = account.getAgreements();
+            assertEquals(fileCurrencies.size(), agreements.size());
+
+            // check for the same currencies
+
+            for(CurrencyAmount currAm: fileCurrencies) {
+
+                String fileCurrency = currAm.getCurrency();
+
+
+                Predicate<String> sameCurrency = c -> equalFnc(c, fileCurrency);
+
+                long agreementsCount = agreements.stream()
+                        .map(a -> a.getCurrencyCd()).
+                        filter(sameCurrency).count();
+                assertEquals(agreementsCount, 1);
+
+                // compare amount for each currency on account
+
+                Set<Transaction> txs = agreements.stream()
+                        .filter(a -> a.getCurrencyCd().equals(fileCurrency))
+                        .flatMap(a -> a.getTransactions().stream())
+                        .collect(Collectors.toSet());
+
+//                for (Transaction tx: txs) {
+//                    System.out.println(tx.getFtId() + ":   " + tx.getSa().getSaId() + ":   " + tx.getCurAmt() );
+//                }
+
+                assertEquals(1, txs.size());
+                Transaction tr = txs.iterator().next();
+
+
+                BigDecimal curAmt = tr.getCurAmt().setScale(2);
+                BigDecimal fileAmount = BigDecimal.valueOf(currAm.getAmount()).setScale(2);
+
+                assertEquals(0, curAmt.compareTo(fileAmount));
+            }
+        }
+    }
+
+    /*
+     * LazyInitializationException should be thrown here
      */
 
     @Test
     public void transactionsFromAccountViaAgreementIT() {
-
-        System.out.println("transactionsFromAccountViaAgreementIT()");
 
         Optional<Account> accountOpt = acctRepo.findById("100056013005");
 

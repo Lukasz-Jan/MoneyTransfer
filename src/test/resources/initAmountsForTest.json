@@ -18,15 +18,6 @@
       ]
     },
     {
-      "accountNumber": "111122224010",
-      "currencyAmounts": [
-        {
-          "currency": "USD",
-          "amount": 200
-        }
-      ]
-    },
-    {
       "accountNumber": "000056013005",
       "currencyAmounts": [
         {
@@ -40,7 +31,32 @@
       "currencyAmounts": [
         {
           "currency": "USD",
-          "amount": 50025
+          "amount": 52345.02
+        }
+      ]
+    },
+    {
+      "accountNumber": "200056013005",
+      "currencyAmounts": [
+        {
+          "currency": "USD",
+          "amount": 52333.02
+        },
+        {
+          "currency": "EUR",
+          "amount": 52.02
+        },
+        {
+          "currency": "GBP",
+          "amount": 999.33
+        },
+        {
+          "currency": "JPY",
+          "amount": 999.33
+        },
+        {
+          "currency": "CAD",
+          "amount": 55.01
         }
       ]
     },
@@ -49,7 +65,7 @@
       "currencyAmounts": [
         {
           "currency": "USD",
-          "amount": 200
+          "amount": 888.88
         }
       ]
     }
