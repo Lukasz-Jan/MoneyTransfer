@@ -90,7 +90,6 @@ public class Account implements Serializable {
             this.creDttm = creDttm;
             return this;
         }
-
     }
 
 }

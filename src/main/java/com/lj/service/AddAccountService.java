@@ -6,6 +6,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -50,6 +52,7 @@ public class AddAccountService {
 
         TransfersystemSchema transfer = mapper.readValue(streamWithJson, TransfersystemSchema.class);
         List<com.lj.gen.json.mappings.transfer.Account> accounts = transfer.getAccounts();
+
 
         Date creationDate = new Date();
 

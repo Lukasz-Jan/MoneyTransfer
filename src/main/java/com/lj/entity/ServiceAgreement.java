@@ -5,38 +5,24 @@ import javax.persistence.*;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
-
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * The persistent class for the CI_SA database table.
  *
  */
+
+@Getter
+@Setter
+@NoArgsConstructor
 @Entity
 @Table(name="CI_SA")
 @NamedQuery(name="ServiceAgreement.findAll", query="SELECT s FROM ServiceAgreement s")
 
 public class ServiceAgreement implements Serializable {
     private static final long serialVersionUID = 1L;
-
-    @OneToMany(cascade=CascadeType.ALL, mappedBy="sa", fetch = FetchType.LAZY)
-    private Set<Transaction> transactions = new HashSet<Transaction>();
-
-    public Set<Transaction> getTransactions() {
-
-        return transactions;
-    }
-
-    @ManyToOne
-    @JoinColumn(name="ACCT_ID", nullable = false)
-    private Account account;
-    public Account getAccount() {
-        return account;
-    }
-
-
-    public void setAccount(Account account) {
-        this.account = account;
-    }
 
     @Id
     @GeneratedValue(strategy=GenerationType.AUTO)
@@ -50,7 +36,6 @@ public class ServiceAgreement implements Serializable {
     @Column(name="CURRENCY_CD")
     private String currencyCd;
 
-
     @Column(name="SA_STATUS")
     private String saStatus;
 
@@ -58,8 +43,30 @@ public class ServiceAgreement implements Serializable {
     @Column(name="VERSION")
     private Long version;
 
-    public ServiceAgreement() {
-    }
+    @ManyToOne
+    @JoinColumn(name="ACCT_ID", nullable = false)
+    private Account account;
+
+
+    @OneToMany(cascade=CascadeType.ALL, mappedBy="sa", fetch = FetchType.LAZY)
+    private Set<Transaction> transactions = new HashSet<Transaction>();
+
+//    public Set<Transaction> getTransactions() { return transactions; }
+//
+//
+//    public void setTransactions(Set<Transaction> transactions) { this.transactions = transactions; }
+//
+//    public void setAccount(Account account) {
+//        this.account = account;
+//    }
+//
+//    public Account getAccount() {
+//        return account;
+//    }
+//
+//
+//    public ServiceAgreement() {
+//    }
 
     private ServiceAgreement(Date creDttm, String currencyCd, Account acct, String saStatus) {
 
