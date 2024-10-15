@@ -1,7 +1,6 @@
 package com.lj.services;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.Date;
 import java.util.Optional;
 import java.util.Set;
@@ -22,6 +21,8 @@ import com.lj.entity.*;
 import com.lj.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.test.annotation.DirtiesContext;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -33,32 +34,29 @@ import static org.mockito.Mockito.*;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class AddAccountService_Init_Method_Test {
 
-    private final String initDataPAtahStr = "src/test/resources/initAmountsForTest.json";
+    private final String initDataPath = "src/test/resources/data/initAmountsForTest.json";
 
     private final File initializationDataFile;
 
-    private Utils jsonHelper;
+    private final Utils jsonHelper = new Utils();
+
+    private final AcctRepo acctRepoMock = mock(AcctRepo.class);
 
 
-    public AddAccountService_Init_Method_Test() {
+    private AddAccountService testedInstance;
 
-        //System.out.println("\ninitializationAccountDataPathStr: " + initializationAccountDataPathStr);
+    public AddAccountService_Init_Method_Test() throws IOException {
 
-        //this.initializationAccountDataPathStr = initializationAccountDataPathStr;
 
-        this.initializationDataFile = new File(initDataPAtahStr);
+        this.initializationDataFile = new File(initDataPath);
+
     }
-
-    private AcctRepo acctRepoMock = mock(AcctRepo.class);
 
     @BeforeAll
     public void init() throws IOException {
-        //MockitoAnnotations.initMocks(this);
-        jsonHelper = new Utils();
-    }
 
-    //@InjectMocks
-    private AddAccountService testedInstance = new AddAccountService(acctRepoMock, "src/test/resources/initAmountsForTest.json");
+        testedInstance = new AddAccountService(acctRepoMock, "initAmountsForTest.json");
+    }
 
     @Test
     public void initMethodTest() throws JsonProcessingException, IOException {
@@ -109,8 +107,4 @@ public class AddAccountService_Init_Method_Test {
         when(acctRepoMock.findById(eq(accountId))).thenReturn(Optional.ofNullable(acc_2));
     }
 
-//    @Test
-//    public void changeAmountForAccountTest() {
-//
-//    }
 }

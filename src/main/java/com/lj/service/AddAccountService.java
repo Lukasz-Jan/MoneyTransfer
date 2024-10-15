@@ -1,21 +1,27 @@
 package com.lj.service;
 
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
+
+import lombok.SneakyThrows;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.servlet.context.AnnotationConfigServletWebServerApplicationContext;
+import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -26,6 +32,8 @@ import com.lj.gen.json.mappings.transfer.TransfersystemSchema;
 import com.lj.repository.*;
 import com.lj.entity.*;
 
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+
 
 @Service
 public class AddAccountService {
@@ -34,21 +42,53 @@ public class AddAccountService {
 
     private final AcctRepo accountRepo;
 
-    private final File fileWithAccountsData;
+    private final File initDataFile;
 
     @Autowired
-    public AddAccountService(AcctRepo accountRepo,
-                             @Value("${fileWithAccountsInitPath}") String initializationDataFilePath) {
+    public AddAccountService(AcctRepo accountRepo, @Value("${initDataFile}") String initFileName) {
 
+        File file = new File(initFileName);
+
+        if(file.exists()) {
+
+            initDataFile = file;
+            logger.info("init file found in filesystem: " + initFileName);
+        }
+        else {
+
+            logger.info("init file not found in file system " + initFileName );
+            String resourcePath = "classpath:data/" + initFileName;
+
+            logger.info("Init resource file: " + resourcePath);
+
+            ResourceLoader resourceLoader = new DefaultResourceLoader();
+            Resource resource = resourceLoader.getResource(resourcePath);
+
+            try {
+
+                if (!resource.isFile()) {
+                    logger.info("Resource not a file");
+                    this.initDataFile = File.createTempFile("initFile", null);
+                    logger.info("Init file created from input stream: " + this.initDataFile.getPath());
+                    Files.copy(resource.getInputStream(), this.initDataFile.toPath(), REPLACE_EXISTING);
+                } else {
+                    logger.info("Resource is a file");
+                    this.initDataFile = resource.getFile();
+                    logger.info("Init file fetched from file system: " + this.initDataFile.getPath());
+                }
+            } catch (IOException e) {
+                logger.error("Initial data file not loaded");
+                throw new RuntimeException(e);
+            }
+        }
         this.accountRepo = accountRepo;
-        this.fileWithAccountsData = new File(initializationDataFilePath);
     }
 
     @Transactional
     public void init() throws JsonProcessingException, IOException {
 
         final ObjectMapper mapper = new ObjectMapper();
-        final InputStream streamWithJson = new FileInputStream(fileWithAccountsData);
+        final InputStream streamWithJson = new FileInputStream(initDataFile);
 
         TransfersystemSchema transfer = mapper.readValue(streamWithJson, TransfersystemSchema.class);
         List<com.lj.gen.json.mappings.transfer.Account> accounts = transfer.getAccounts();
@@ -75,7 +115,7 @@ public class AddAccountService {
 
 
     private void saveAccountAgreementsAndTransactions(String currency, BigDecimal amount, String acctNo,
-                                                                 Date creationDate) {
+                                                      Date creationDate) {
 
         Optional<Account> accountOpt = accountRepo.findById(acctNo);
 
@@ -124,7 +164,7 @@ public class AddAccountService {
         final ObjectMapper mapper = new ObjectMapper();
         TransfersystemSchema transfer = null;
 
-        try (final InputStream streamWithJson = new FileInputStream(fileWithAccountsData)) {
+        try (final InputStream streamWithJson = new FileInputStream(initDataFile)) {
 
             transfer = mapper.readValue(streamWithJson, TransfersystemSchema.class);
 
@@ -136,20 +176,19 @@ public class AddAccountService {
                             String saCurrency = saForCurrency.getCurrency();
                             if (saCurrency.equals(searchCurr)) {
                                 saForCurrency.setAmount(newAmount.doubleValue());
-                                logger.info("Account updated in file " + acc.getAccountNumber() + " " + saCurrency);
+
+                                logger.info(acc.getAccountNumber() + " change amount  " + saCurrency + "  " + newAmount.doubleValue() + " updated in file:    " + initDataFile);
                                 break;
                             }
                         }
                         return true;
                     });
 
-            mapper.writeValue(fileWithAccountsData, transfer);
+            mapper.writeValue(initDataFile, transfer);
 
         } catch (IOException e1) {
             logger.error("Reading Json exception while updating account file");
             return;
         }
-        System.out.println("After try");
-
     }
 }

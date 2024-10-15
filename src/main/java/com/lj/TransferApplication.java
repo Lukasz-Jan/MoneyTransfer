@@ -2,7 +2,7 @@ package com.lj;
 
 
 /*
- * All program is written and owned by Lukasz Janowski
+ * Program is written and owned by Lukasz Janowski
  * email: lukasz_jan@vp.pl
  */
 
@@ -40,18 +40,14 @@ public class TransferApplication {
     }
 
     @Autowired
-    //public TransferApplication(@Value("${spring.activemq.broker-url}") String brokerUrl, AddAccountService accountSetUp) {
     public TransferApplication(@Value("${spring.activemq.broker-url}") String brokerUrl, AddAccountService accountSetUp) {
 
         this.brokerUrl = brokerUrl;
         this.accountSetUp = accountSetUp;
-        log.info("brokerUrl: " + brokerUrl);
     }
 
 
     public static void main(String[] args) throws InterruptedException {
-
-        System.out.println("args.length: " + args.length);
 
         ConfigurableApplicationContext appCtx = SpringApplication.run(TransferApplication.class, args);
     }

@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.lj</groupId>
     <artifactId>MoneyTransfer</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0</version>
 
 
     <properties>
@@ -12,6 +12,15 @@
     </properties>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources/xsd</directory>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+        </resources>
+
         <plugins>
             <plugin>
                 <artifactId>maven-war-plugin</artifactId>
@@ -114,7 +123,13 @@
                 </executions>
             </plugin>
 
-
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>com.lj.TransferApplication</mainClass>
+                </configuration>
+            </plugin>
 
         </plugins>
     </build>
