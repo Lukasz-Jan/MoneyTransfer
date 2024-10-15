@@ -15,6 +15,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 import org.xml.sax.SAXException;
@@ -46,23 +49,59 @@ public class MessageListenerAdapter implements MessageListener {
     private final ResponseService respSrv;
 
     @Autowired
-    public MessageListenerAdapter(TransacionService trSrv, ResponseService respSrv, @Value("${messageXsd}") String requestResponseXsdPath) {
+    public MessageListenerAdapter(TransacionService trSrv, ResponseService respSrv, @Value("${messageXsd}") String requestResponseXsdPath) throws InstantiationException {
 
         this.trSrv = trSrv;
         this.respSrv = respSrv;
 
-        SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-        StreamSource source = null;
-        Schema requestResponseSchemaTemp = null;
+        String resourceFileName = fetchFileNameFromPath(requestResponseXsdPath);
+        logger.info("Init xsd resource name: " + resourceFileName);
 
-        try(InputStream inputStream = Files.newInputStream(Paths.get(requestResponseXsdPath))) {
+        ResourceLoader resourceLoader = new DefaultResourceLoader();
+        String resourcePath = "classpath:" + resourceFileName;
+        logger.info("resourcePath: " + resourcePath);
+        Resource resource = resourceLoader.getResource(resourcePath);
 
-            source = new StreamSource(	new InputStreamReader(inputStream, StandardCharsets.UTF_8)	);
-            requestResponseSchemaTemp = schemaFactory.newSchema(source);
-        } catch (IOException | SAXException e2) {
-            logger.error("IO exception while xsd reading for " + requestResponseXsdPath);
+        if(resource.exists()) {
+
+            SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+            StreamSource source = null;
+            Schema requestResponseSchemaTemp = null;
+
+            if (!resource.isFile()) {
+
+                logger.info("Xsd Resource is fetched from jar : " + resourceFileName);
+
+                try (InputStream inputStream = resource.getInputStream()) {
+                    source = new StreamSource(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+                    requestResponseSchemaTemp = schemaFactory.newSchema(source);
+                } catch (IOException | SAXException e2) {
+                    logger.error("IO exception while xsd reading for resource stream: " + resourcePath);
+                }
+            } else {
+
+                logger.info("Resource is fetched from file system : " + resourceFileName);
+
+                try (InputStream inputStream = Files.newInputStream(Paths.get(requestResponseXsdPath))) {
+                    source = new StreamSource(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+                    requestResponseSchemaTemp = schemaFactory.newSchema(source);
+                } catch (IOException | SAXException e2) {
+                    logger.error("IO exception while xsd reading for " + requestResponseXsdPath);
+                }
+            }
+            requestResponseSchema = requestResponseSchemaTemp;
         }
-        requestResponseSchema = requestResponseSchemaTemp;
+        else {
+            throw new InstantiationException("MessageListenerAdapter file not created");
+        }
+    }
+
+    private String fetchFileNameFromPath(String requestResponseXsdPath) {
+
+        String[] split = requestResponseXsdPath.split("/");
+        int retIdx = split.length - 1;
+        String ret = split[retIdx];
+        return ret;
     }
 
     @JmsListener(destination = "${srcQueue}")

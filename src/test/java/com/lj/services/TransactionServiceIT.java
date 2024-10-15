@@ -10,13 +10,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.Optional;
-import java.util.Scanner;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 import javax.xml.bind.JAXBElement;
-
 import com.lj.dto.TransactionDto;
 import com.lj.entity.Account;
 import com.lj.entity.Transaction;
@@ -41,8 +37,10 @@ import com.lj.entity.ServiceAgreement;
 import com.lj.gen.xsd.mappings.transfer.ActionType;
 import com.lj.gen.xsd.mappings.transfer.OutcomeType;
 import com.lj.gen.xsd.mappings.transfer.TransferRequestType;
-
 import com.lj.services.request.MoneyRequestBuilder;
+import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.test.annotation.DirtiesContext;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, classes = TransferApplication.class)
@@ -53,11 +51,7 @@ public class TransactionServiceIT {
 
     private static final Logger logger = LoggerFactory.getLogger(TransactionServiceIT.class);
 
-    private final String initializationAccountDataPathStr;
-
-    private final File initializationDataFile;
-
-    private static final String TEMP_FILE_FOR_TEST = "src/test/resources/tempDataForTest.json";
+    private final File resourceFile;
 
     @Autowired
     private TransacionService requestSrv;
@@ -66,18 +60,30 @@ public class TransactionServiceIT {
     @Autowired
     private AcctRepo acctRepo;
 
-    private Utils jsonHelper;
+    private final Utils jsonHelper;
 
-    public TransactionServiceIT(@Value("${fileWithAccountsInitPath}") String initializationAccountDataPathStr) {
+    @BeforeAll
+    public void init() throws IOException {
+    }
 
-        this.initializationAccountDataPathStr = initializationAccountDataPathStr;
-        initializationDataFile = new File(initializationAccountDataPathStr);
-        if(!initializationDataFile.exists()) throw new RuntimeException();
+    @AfterAll
+    public void afterAll() throws IOException {
+    }
+
+    public TransactionServiceIT(@Value("${initDataFile}") String initFile) throws IOException {
+
+        final String resourcePath = "classpath:data/" + initFile;
+        final ResourceLoader resourceLoader = new DefaultResourceLoader();
+        final Resource resource = resourceLoader.getResource(resourcePath);
+
+        resourceFile = resource.getFile();
+
+        if(!resourceFile.exists()) throw new RuntimeException();
         jsonHelper = new Utils();
     }
 
-    @Autowired
-    @Value("${fileWithAccountsInitPath}") String initializationAccountDataPath;
+//    @Autowired
+//    @Value("${fileWithAccountsInitPath}") String initializationAccountDataPath;
 
     /*
      * TransactionService::processRequest() operation is tested
@@ -114,8 +120,6 @@ public class TransactionServiceIT {
         BigDecimal afterIncomeShouldBe = beforeIncomeBalance.add(income);
 
         assertEquals(afterIncomeBalance, afterIncomeShouldBe);
-
-
     }
 
     /*
@@ -134,7 +138,7 @@ public class TransactionServiceIT {
 
         Predicate<TransactionDto> currencyEqualsL = el -> el.getSa().getCurrencyCd().equals(currency);
 
-        Set<TransactionDto> jsonTxs = jsonHelper.getTransactionsFromJsonForAcoountId(initializationDataFile, inputAcctId);
+        Set<TransactionDto> jsonTxs = jsonHelper.getTransactionsFromJsonForAcoountId(resourceFile, inputAcctId);
 
         TransactionDto txJson = jsonTxs.stream()
                 .filter(currencyEqualsL)
@@ -151,7 +155,8 @@ public class TransactionServiceIT {
 
         Account account = acctRepo.fetchAccountWithTransactions(inputAcctId);
 
-        Set<Transaction> txs = account.getAgreements().stream()
+        Set<Transaction> txs = account.getAgreements()
+                .stream()
                 .filter(a -> a.getCurrencyCd().equals(currency))
                 .map(a -> a.getTransactions())
                 .findAny()
@@ -225,18 +230,7 @@ public class TransactionServiceIT {
 
     }
 
-    @BeforeAll
-    public void init() throws IOException {
 
-        copyFileWithAccountToTemporaryFile(initializationAccountDataPath, TEMP_FILE_FOR_TEST);
-    }
-
-    @AfterAll
-    public void afterAll() throws IOException {
-
-        copyTempFileWithAccountBackToOrigin( TEMP_FILE_FOR_TEST, initializationAccountDataPath);
-
-    }
 
     private void copyFileWithAccountToTemporaryFile(String fromPathStr, String toPathStr) throws IOException {
 

@@ -31,19 +31,25 @@ import com.lj.entity.*;
 import com.lj.repository.*;
 import com.lj.gen.json.mappings.transfer.CurrencyAmount;
 import com.lj.gen.json.mappings.transfer.TransfersystemSchema;
-
-
+import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class AddAccountServiceChangeAmountForAccountTest {
 
-    private final String testedFileWithDataString = "src/test/resources/initDataForChangeAmountTest.json";
-    private final String tempFileForTest = "src/test/resources/tempDataForChangeAmountTest.json";
+    //private final String initDataFilePath = "src/test/resources/data/initDataForChangeAmountTest.json";
+    private final String initFileName = "initDataForChangeAmountTest.json";
+    private final String initFilePath = "data/initDataForChangeAmountTest.json";
+
+    private final String resourcePath = "classpath:" + initFilePath;
+    private final ResourceLoader resourceLoader = new DefaultResourceLoader();
+    private final Resource resourceFile = resourceLoader.getResource(resourcePath);
 
     @Mock
     private AcctRepo acctRepoMock;
 
-    private AddAccountService testedInstance = new AddAccountService(acctRepoMock, testedFileWithDataString);
+    private AddAccountService testedInstance = new AddAccountService(acctRepoMock, initFileName);
 
     @BeforeAll
     public void init() throws IOException {
@@ -53,19 +59,14 @@ public class AddAccountServiceChangeAmountForAccountTest {
 
     @BeforeEach
     public void beforeEach() throws IOException {
-        copyFileWithAccountToTemporaryFile(testedFileWithDataString, tempFileForTest);
-
     }
 
     @AfterEach
     public void afterEach() throws IOException {
-        copyTempFileWithAccountBackToOrigin(tempFileForTest, testedFileWithDataString);
     }
 
-
-
     @Test
-    public void changeAmountForAccountInFile_Account_IncomeForEachCurrency() {
+    public void changeAmountForAccountInFile_Account_IncomeForEachCurrency() throws IOException {
 
         String accountId = "999142006678";
         BigDecimal setNewAmountPLN = BigDecimal.valueOf(11000.88);
@@ -77,14 +78,13 @@ public class AddAccountServiceChangeAmountForAccountTest {
         testedInstance.changeAmountForAccount(accountId, "USD", setNewAmountUSD);
 
         final ObjectMapper mapper = new ObjectMapper();
-        File fileWithAccountsDataAfterChange = new File(testedFileWithDataString);
         TransfersystemSchema transfer = null;
 
-        try (final InputStream streamWithJson = Files.newInputStream(fileWithAccountsDataAfterChange.toPath())) {
+        try (final InputStream streamWithJson = resourceFile.getInputStream()) {
 
             transfer = mapper.readValue(streamWithJson, TransfersystemSchema.class);
         } catch (IOException e1) {
-            fail("Problems with file " + testedFileWithDataString);
+            fail("Problems with file " + resourceFile);
         }
 
         Optional<CurrencyAmount> amountOptPLN = transfer.getAccounts().stream().filter(ac -> ac.getAccountNumber().equals(accountId)).flatMap(ac -> ac.getCurrencyAmounts().stream())
@@ -143,23 +143,25 @@ public class AddAccountServiceChangeAmountForAccountTest {
         testedInstance.changeAmountForAccount(acctId_000056013005, currency, newAmountForAcct_3005_EUR);
 
         final ObjectMapper mapper = new ObjectMapper();
-        File fileWithAccountsDataAfterChange = new File(testedFileWithDataString);
         TransfersystemSchema transfer = null;
 
-        try (final InputStream streamWithJson = Files.newInputStream(fileWithAccountsDataAfterChange.toPath())) {
+        try (final InputStream streamWithJson = resourceFile.getInputStream()) {
 
             transfer = mapper.readValue(streamWithJson, TransfersystemSchema.class);
         } catch (IOException e1) {
-            fail("Problems with file " + testedFileWithDataString);
+            fail("Problems with file " + resourceFile);
         }
 
 
         Optional<CurrencyAmount> amountOptPLN = transfer.getAccounts().stream().filter(ac -> ac.getAccountNumber().equals(accountId)).flatMap(ac -> ac.getCurrencyAmounts().stream())
+
                 .filter(curAmount -> curAmount.getCurrency().equals("PLN")).findAny();
+
         amountOptPLN.ifPresent(am -> assertEquals(setNewAmountPLN, BigDecimal.valueOf(am.getAmount())));
 
         Optional<CurrencyAmount> amountOptSEK = transfer.getAccounts().stream().filter(ac -> ac.getAccountNumber().equals(accountId)).flatMap(ac -> ac.getCurrencyAmounts().stream())
                 .filter(curAmount -> curAmount.getCurrency().equals("SEK")).findAny();
+
         amountOptSEK.ifPresent(am -> assertEquals(setNewAmountSEK, BigDecimal.valueOf(am.getAmount())));
 
         Optional<CurrencyAmount> amountOptUSD = transfer.getAccounts().stream().filter(ac -> ac.getAccountNumber().equals(accountId)).flatMap(ac -> ac.getCurrencyAmounts().stream())
@@ -185,12 +187,11 @@ public class AddAccountServiceChangeAmountForAccountTest {
         BigDecimal setNewAmountPLN = BigDecimal.valueOf(22.77);
 
         final ObjectMapper mapper = new ObjectMapper();
-        File fileWithAccountsDataAfterChange = new File(testedFileWithDataString);
         TransfersystemSchema transfer = null;
 
         Double originalAmountForEUR = null;
 
-        try (final InputStream streamWithJson = new FileInputStream(fileWithAccountsDataAfterChange)) {
+        try (final InputStream streamWithJson = resourceFile.getInputStream()) {
 
             transfer = mapper.readValue(streamWithJson, TransfersystemSchema.class);
             originalAmountForEUR = transfer.getAccounts().stream().filter(acc -> acc.getAccountNumber().equals(accountId))
@@ -198,7 +199,7 @@ public class AddAccountServiceChangeAmountForAccountTest {
 
             assertNotNull(originalAmountForEUR, "original amount for account for euro should exist");
         } catch (IOException e1) {
-            fail("Problems with file " + testedFileWithDataString);
+            fail("Problems with file " + resourceFile);
         }
 
         // trying to set account with wrong currency
@@ -206,10 +207,10 @@ public class AddAccountServiceChangeAmountForAccountTest {
         testedInstance.changeAmountForAccount(accountId, currency, setNewAmountPLN);
 
 
-        try (final InputStream streamWithJson = new FileInputStream(fileWithAccountsDataAfterChange)) {
+        try (final InputStream streamWithJson = resourceFile.getInputStream()) {
             transfer = mapper.readValue(streamWithJson, TransfersystemSchema.class);
         } catch (IOException e1) {
-            fail("Problems with file " + testedFileWithDataString);
+            fail("Problems with file " + resourceFile);
         }
 
         Optional<CurrencyAmount> amount_AfterChange_Opt = transfer.getAccounts().stream().filter(ac -> ac.getAccountNumber().equals(accountId)).flatMap(ac -> ac.getCurrencyAmounts().stream())
@@ -223,39 +224,4 @@ public class AddAccountServiceChangeAmountForAccountTest {
         verify(acctRepoMock, times(0)).save(Mockito.any(Account.class));
     }
 
-
-
-
-
-    private void copyFileWithAccountToTemporaryFile(String fromPathStr, String toPathStr) throws IOException {
-
-        Path fromPath = Paths.get(fromPathStr);
-        System.out.println("fromPath: " + fromPath);
-        assertNotNull(fromPath);
-
-        if(!Files.exists(Paths.get(fromPath.toString()))) {
-            fail("File not present " + fromPath.toString());
-        }
-
-        Path toPath = Paths.get(toPathStr);
-
-        if(!Files.exists(Paths.get(toPath.toString()))) {
-            fail("File not present " + toPath.toString());
-        }
-        assertNotNull(toPath);
-        Files.copy(fromPath, toPath, StandardCopyOption.REPLACE_EXISTING);
-    }
-
-    private void copyTempFileWithAccountBackToOrigin(String fromPathStr, String toPathStr) throws IOException {
-
-        Path fromPath = Paths.get(fromPathStr);
-        if(!Files.exists(Paths.get(fromPath.toString()))) {
-            fail("File not present " + fromPath.toString());
-        }
-        Path toPath = Paths.get(toPathStr);
-        if(!Files.exists(Paths.get(toPath.toString()))) {
-            fail("File not present " + toPath.toString());
-        }
-        Files.copy(fromPath, toPath, StandardCopyOption.REPLACE_EXISTING);
-    }
 }

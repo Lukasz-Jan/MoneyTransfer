@@ -32,6 +32,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import com.lj.entity.*;
 import com.lj.services.jsonutils.Utils;
+import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.test.annotation.DirtiesContext;
 
 // starting:
@@ -49,15 +52,19 @@ public class AddAccountServiceIT implements TestCommons {
     @Autowired
     private AcctRepo acctRepo;
 
-    private final String initializationAccountDataPathStr;
-
     private final File initializationDataFile;
 
     @Autowired
-    public AddAccountServiceIT(@Value("${fileWithAccountsInitPath}") String initializationAccountDataPathStr) {
+    public AddAccountServiceIT(@Value("${initDataFile}") String initFile) throws IOException {
 
-        this.initializationAccountDataPathStr = initializationAccountDataPathStr;
-        initializationDataFile = new File(initializationAccountDataPathStr);
+        final String resourcePath = "classpath:data/" + initFile;
+
+        final ResourceLoader resourceLoader = new DefaultResourceLoader();
+        final Resource resource = resourceLoader.getResource(resourcePath);
+
+        initializationDataFile = resource.getFile();
+        assertEquals("initAmountsForTest.json", initializationDataFile.getName());
+        initializationDataFile.getName();
         if(!initializationDataFile.exists()) throw new RuntimeException();
     }
 
@@ -73,6 +80,8 @@ public class AddAccountServiceIT implements TestCommons {
      */
     @Test
     public void addAccountsTestIT() throws Throwable {
+
+        assertNotNull(initializationDataFile);
 
         String acctId = "999142006678";
 
@@ -305,6 +314,8 @@ public class AddAccountServiceIT implements TestCommons {
 
             // check for the same currencies
 
+            //System.out.println("\naccountId: " + accountId);
+
             for(CurrencyAmount currAm: fileCurrencies) {
 
                 String fileCurrency = currAm.getCurrency();
@@ -333,7 +344,9 @@ public class AddAccountServiceIT implements TestCommons {
 
 
                 BigDecimal curAmt = tr.getCurAmt().setScale(2);
+                //System.out.println("curAmt: " + curAmt);
                 BigDecimal fileAmount = BigDecimal.valueOf(currAm.getAmount()).setScale(2);
+                //System.out.println("fileAmount: " + fileAmount);
 
                 assertEquals(0, curAmt.compareTo(fileAmount));
             }
