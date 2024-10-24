@@ -6,15 +6,27 @@ More detailed description in file description.md.
 
 ##### How to start?
 ######  Start with data initialized in application property
-- java -jar MoneyTransfer-1.0.jar
+ - java -jar MoneyTransfer-1.0.jar
 ######  Start with data initialized from inner resource
-- java -jar MoneyTransfer-1.0.jar --initDataFile=AccountsMoneyBalance.json
+ - java -jar MoneyTransfer-1.0.jar --initDataFile=AccountsData.json
 ######  Starting with init data from file system
-- java -jar MoneyTransfer-1.0.jar --initDataFile=/opt/transfer/data/AccountsMoneyBalance.json
+ - java -jar MoneyTransfer-1.0.jar --initDataFile=/usr/app/transfer/data/AccountsData.json
 ######  Maven start:
  - mvn spring-boot:run
- - mvn spring-boot:run -Dspring-boot.run.arguments="--initDataFile=AccountsMoneyBalance.json"
- - mvn spring-boot:run -Dspring-boot.run.arguments="--initDataFile=/opt/transfer/data/AccountsMoneyBalance.json"
+ - mvn spring-boot:run -Dspring-boot.run.arguments="--initDataFile=AccountsData.json" 
+ - mvn spring-boot:run -Dspring-boot.run.arguments="--initDataFile=/usr/app/transfer/data/AccountsData.json"
+
+debug:
+
+
+    java "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005" -jar MoneyTransfer-1.0.jar
+    java "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=0.0.0.0:5005" -jar MoneyTransfer-1.0.jar 
+    java "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0.0.0.0:5005" -jar MoneyTransfer-1.0.jar
+    java "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0.0.0.0:5005" -jar MoneyTransfer-1.0.jar --initDataFile=/usr/app/transfer/data/AccountsData.json
+
+
+    
+
 
 ######  Tests run:
 
