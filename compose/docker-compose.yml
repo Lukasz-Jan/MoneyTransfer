@@ -1,0 +1,41 @@
+
+version: '3.1'
+
+networks:
+  transfer_devel:
+    name: transfer_devel
+    external: true
+#    driver: overlay
+
+services:
+  transfer_one:
+    image:
+      transfer_c1
+    ports:
+      - 127.0.0.1:8082:8082
+      - 35005:5005
+    restart: "no"
+    networks:
+      - transfer_devel
+
+  transfer_two:
+    image:
+      transfer_c1
+    ports:
+      - 127.0.0.1:8083:8082
+      - 35006:5006
+    restart: "no"
+    networks:
+      - transfer_devel
+
+
+
+    #network_mode: 'host'
+#    networks:
+#      - my-bridge
+#networks:
+#  my-bridge:
+#    external: true
+#    name: my-bridge
+
+
