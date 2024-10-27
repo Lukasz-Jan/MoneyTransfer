@@ -23,7 +23,17 @@ services:
       transfer_c1
     ports:
       - 127.0.0.1:8083:8082
-      - 35006:5006
+      - 35006:5005
+    restart: "no"
+    networks:
+      - transfer_devel
+
+  transfer_three:
+    image:
+      transfer_c1
+    ports:
+      - 127.0.0.1:8084:8082
+      - 35007:5005
     restart: "no"
     networks:
       - transfer_devel

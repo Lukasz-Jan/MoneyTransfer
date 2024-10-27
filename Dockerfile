@@ -11,13 +11,23 @@ COPY /src/main/resources/data/AccountsData.json /usr/app/transfer/data
 
 COPY target/MoneyTransfer-1.0.jar /usr/app/transfer
 
+
+CMD ["java", "-jar", "/usr/app/transfer/MoneyTransfer-1.0.jar", "--initDataFile=/usr/app/transfer/data/AccountsData.json"]
+
+
+
+
+
+
+
+
+
+
+
+
 #CMD pwd
 
 #CMD ["/bin/bash", "-c", "ls -la"]
-
-#java -jar /usr/app/transfer/MoneyTransfer-1.0.jar --initDataFile=/usr/app/transfer/data/AccountsData.json
-
-CMD ["java", "-jar", "/usr/app/transfer/MoneyTransfer-1.0.jar", "--initDataFile=/usr/app/transfer/data/AccountsData.json"]
 
 #CMD ["sh", "-c", "django-admin startproject $PROJECTNAME"]
 
@@ -27,9 +37,4 @@ CMD ["java", "-jar", "/usr/app/transfer/MoneyTransfer-1.0.jar", "--initDataFile=
 
 #RUN java -jar /usr/app/transfer/MoneyTransfer-1.0.jar
 
-
-
-
-
-
-
+#java -jar /usr/app/transfer/MoneyTransfer-1.0.jar --initDataFile=/usr/app/transfer/data/AccountsData.json

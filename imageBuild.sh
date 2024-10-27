@@ -1,2 +1,2 @@
 docker build -t "transfer_c1" .
-docker build -t "transfer_c2" .
+#docker build -t "transfer_c2" .
