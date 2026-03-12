@@ -1,4 +1,4 @@
-package com.lj.service;
+package com.lj.services;
 
 
 import java.math.BigDecimal;

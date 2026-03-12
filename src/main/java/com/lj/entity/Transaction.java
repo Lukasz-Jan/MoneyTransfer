@@ -40,8 +40,6 @@ public class Transaction implements Serializable {
     @Column(name="VERSION")
     private Long version;
 
-
-
     private Transaction(BigDecimal curAmt, Date freezeDttm, ServiceAgreement sa) {
         this.curAmt = curAmt;
         this.freezeDttm = freezeDttm;

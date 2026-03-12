@@ -1,5 +1,7 @@
 package com.lj.services.jsonutils;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lj.dto.AccountDto;
 import com.lj.dto.ServiceAgreementDto;
@@ -34,16 +36,20 @@ public class Utils {
         return ret;
     }
 
-    public Set<Account> getAllJsonAccounts(File file) throws IOException {
+    public Set<Account> getAllJsonAccounts(File file) {
 
         final ObjectMapper mapper = new ObjectMapper();
-        final InputStream streamWithJson = new FileInputStream(file);
+        final InputStream streamWithJson;
+        TransfersystemSchema transfer;
 
-        TransfersystemSchema transfer = mapper.readValue(streamWithJson, TransfersystemSchema.class);
+        try {
+            streamWithJson = new FileInputStream(file);
+            transfer = mapper.readValue(streamWithJson, TransfersystemSchema.class);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         Set<Account> accounts = new HashSet<>(transfer.getAccounts());
-
-
         return accounts;
     }
 
@@ -54,6 +60,10 @@ public class Utils {
 
         TransfersystemSchema transfer = mapper.readValue(streamWithJson, TransfersystemSchema.class);
         Set<Account> accounts = new HashSet<>(transfer.getAccounts());
+
+        List<Account> accounts1 = transfer.getAccounts();
+        Account account = accounts1.get(0);
+        account.getCurrencyAmounts();
 
         Set<CurrencyAmount> ret = new HashSet<>();
 

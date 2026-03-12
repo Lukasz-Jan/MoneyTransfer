@@ -21,7 +21,7 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 import org.xml.sax.SAXException;
-import com.lj.service.TransacionService;
+import com.lj.services.TransacionService;
 import javax.xml.XMLConstants;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;

@@ -18,6 +18,8 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Entity
+
+//@Table(name="CI_SA", schema="my")
 @Table(name="CI_SA")
 @NamedQuery(name="ServiceAgreement.findAll", query="SELECT s FROM ServiceAgreement s")
 

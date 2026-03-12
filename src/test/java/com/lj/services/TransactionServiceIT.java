@@ -18,7 +18,6 @@ import com.lj.entity.Account;
 import com.lj.entity.Transaction;
 import com.lj.repository.AcctRepo;
 import com.lj.repository.TransactionRepo;
-import com.lj.service.TransacionService;
 import com.lj.services.jsonutils.Utils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
