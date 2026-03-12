@@ -22,7 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lj.gen.json.mappings.transfer.CurrencyAmount;
 import com.lj.gen.json.mappings.transfer.TransfersystemSchema;
 import com.lj.repository.*;
-import com.lj.entity.*;
+import com.lj.entities.*;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
@@ -31,9 +31,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 public class AddAccountService {
 
     private static final Logger logger = LoggerFactory.getLogger(AddAccountService.class);
-
     private final AcctRepo accountRepo;
-
     private final File initDataFile;
 
     @Autowired

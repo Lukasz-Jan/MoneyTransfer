@@ -6,7 +6,7 @@ import java.util.Date;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import com.lj.entity.*;
+import com.lj.entities.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

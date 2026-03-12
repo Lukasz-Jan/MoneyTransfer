@@ -9,8 +9,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
-import com.lj.entity.*;
-import com.lj.repository.*;
+
 import com.lj.gen.xsd.mappings.transfer.ActionType;
 import com.lj.gen.xsd.mappings.transfer.TransferRequestType;
 import com.lj.gen.xsd.mappings.transfer.ObjectFactory;

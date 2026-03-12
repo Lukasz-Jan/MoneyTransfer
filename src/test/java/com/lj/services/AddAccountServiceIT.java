@@ -14,7 +14,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
 import com.lj.dto.AccountDto;
 import com.lj.dto.TransactionDto;
 import com.lj.gen.json.mappings.transfer.CurrencyAmount;
@@ -30,7 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
-import com.lj.entity.*;
+import com.lj.entities.*;
 import com.lj.services.jsonutils.Utils;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;

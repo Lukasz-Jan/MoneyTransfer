@@ -20,7 +20,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.lj.entity.*;
+import com.lj.entities.*;
 import com.lj.repository.*;
 import com.lj.gen.json.mappings.transfer.CurrencyAmount;
 import com.lj.gen.json.mappings.transfer.TransfersystemSchema;
