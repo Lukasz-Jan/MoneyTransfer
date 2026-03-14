@@ -1,24 +1,16 @@
-package com.lj.service;
-
+package com.lj.services;
 
 import java.io.*;
 import java.math.BigDecimal;
 import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
-import java.time.LocalDate;
-import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
-
-import lombok.SneakyThrows;
-import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.web.servlet.context.AnnotationConfigServletWebServerApplicationContext;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
@@ -26,22 +18,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import com.lj.gen.json.mappings.transfer.CurrencyAmount;
 import com.lj.gen.json.mappings.transfer.TransfersystemSchema;
 import com.lj.repository.*;
-import com.lj.entity.*;
-
+import com.lj.entities.*;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-
 
 @Service
 public class AddAccountService {
 
     private static final Logger logger = LoggerFactory.getLogger(AddAccountService.class);
-
     private final AcctRepo accountRepo;
-
     private final File initDataFile;
 
     @Autowired
@@ -49,14 +36,13 @@ public class AddAccountService {
 
         File file = new File(initFileName);
 
-        if(file.exists()) {
+        if (file.exists()) {
 
             initDataFile = file;
-            logger.info("init file found in filesystem: " + initFileName);
-        }
-        else {
+            logger.info("init file + " + initFileName + " found in filesystem: " + initFileName);
+        } else {
 
-            logger.info("init file not found in file system " + initFileName );
+            logger.info("init file " + initFileName + " not found in file system " + initFileName);
             String resourcePath = "classpath:data/" + initFileName;
 
             logger.info("Init resource file: " + resourcePath);
@@ -85,14 +71,13 @@ public class AddAccountService {
     }
 
     @Transactional
-    public void init() throws JsonProcessingException, IOException {
+    public void init() throws IOException {
 
         final ObjectMapper mapper = new ObjectMapper();
         final InputStream streamWithJson = new FileInputStream(initDataFile);
 
         TransfersystemSchema transfer = mapper.readValue(streamWithJson, TransfersystemSchema.class);
         List<com.lj.gen.json.mappings.transfer.Account> accounts = transfer.getAccounts();
-
 
         Date creationDate = new Date();
 
@@ -112,7 +97,6 @@ public class AddAccountService {
         }
         streamWithJson.close();
     }
-
 
     private void saveAccountAgreementsAndTransactions(String currency, BigDecimal amount, String acctNo,
                                                       Date creationDate) {
@@ -156,39 +140,6 @@ public class AddAccountService {
             return sa;
         } else {
             return saOpt.get();
-        }
-    }
-
-    public void changeAmountForAccount(String searchAccount, String searchCurr, BigDecimal newAmount) {
-
-        final ObjectMapper mapper = new ObjectMapper();
-        TransfersystemSchema transfer = null;
-
-        try (final InputStream streamWithJson = new FileInputStream(initDataFile)) {
-
-            transfer = mapper.readValue(streamWithJson, TransfersystemSchema.class);
-
-            transfer.getAccounts().stream().filter(acc -> acc.getAccountNumber().contentEquals(searchAccount)).findAny()
-                    .map(acc -> {
-
-                        for (CurrencyAmount saForCurrency : acc.getCurrencyAmounts()) {
-
-                            String saCurrency = saForCurrency.getCurrency();
-                            if (saCurrency.equals(searchCurr)) {
-                                saForCurrency.setAmount(newAmount.doubleValue());
-
-                                logger.info(acc.getAccountNumber() + " change amount  " + saCurrency + "  " + newAmount.doubleValue() + " updated in file:    " + initDataFile);
-                                break;
-                            }
-                        }
-                        return true;
-                    });
-
-            mapper.writeValue(initDataFile, transfer);
-
-        } catch (IOException e1) {
-            logger.error("Reading Json exception while updating account file");
-            return;
         }
     }
 }

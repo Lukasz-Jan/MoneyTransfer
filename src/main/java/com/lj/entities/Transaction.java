@@ -1,4 +1,4 @@
-package com.lj.entity;
+package com.lj.entities;
 
 import java.io.Serializable;
 import javax.persistence.*;
@@ -39,8 +39,6 @@ public class Transaction implements Serializable {
     @Version
     @Column(name="VERSION")
     private Long version;
-
-
 
     private Transaction(BigDecimal curAmt, Date freezeDttm, ServiceAgreement sa) {
         this.curAmt = curAmt;

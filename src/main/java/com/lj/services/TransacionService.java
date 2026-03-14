@@ -1,4 +1,4 @@
-package com.lj.service;
+package com.lj.services;
 
 
 import java.math.BigDecimal;
@@ -6,7 +6,7 @@ import java.util.Date;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import com.lj.entity.*;
+import com.lj.entities.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,13 +28,14 @@ public class TransacionService {
 
     private final TransactionRepo trRepo;
 
-    private final AddAccountService jsonSrv;
+    private final FileAmountUpdater updateAccountService;
 
     @Autowired
-    public TransacionService(AcctRepo acctRepo, TransactionRepo trRepo, AddAccountService jsonSrv) {
+    public TransacionService(AcctRepo acctRepo, TransactionRepo trRepo,
+                             FileAmountUpdater updateAccountService) {
         this.acctRepo = acctRepo;
         this.trRepo = trRepo;
-        this.jsonSrv = jsonSrv;
+        this.updateAccountService = updateAccountService;
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRED)
@@ -44,7 +45,9 @@ public class TransacionService {
 
         Supplier<OutcomeType> sup = () -> notFound(req.getRequestId());
 
-        OutcomeType out = Optional.ofNullable(sa).map(saF -> prosessCreditDebit(sa, req)).orElseGet(sup);
+        OutcomeType out = Optional.ofNullable(sa)
+                .map(saF -> prosessCreditDebit(sa, req))
+                .orElseGet(sup);
 
         return out;
     }
@@ -56,8 +59,12 @@ public class TransacionService {
 
         ServiceAgreement saFound = acctRepo.findById(accountNumber).map(acct -> {
 
-            ServiceAgreement saInner = acct.getAgreements().stream().filter(sa -> sa.getCurrencyCd().equals(saCurrency))
-                    .findFirst().map(sa -> sa).orElse(null);
+            ServiceAgreement saInner = acct.getAgreements()
+                    .stream()
+                    .filter(sa -> sa.getCurrencyCd().equals(saCurrency))
+                    .findFirst()
+                    .map(sa -> sa)
+                    .orElse(null);
             return saInner;
         }).orElse(null);
 
@@ -128,8 +135,7 @@ public class TransacionService {
     }
 
     private void changeJsonFile(String acct, String currency, BigDecimal newAmount) {
-
-        jsonSrv.changeAmountForAccount(acct, currency, newAmount);
+        updateAccountService.changeAmountForAccountInInitDataFile(acct, currency, newAmount);
     }
 
     private BigDecimal countBalance(ServiceAgreement sa) {

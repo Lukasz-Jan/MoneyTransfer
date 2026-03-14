@@ -16,14 +16,24 @@ More detailed description in file description.md.
  - mvn spring-boot:run -Dspring-boot.run.arguments="--initDataFile=AccountsData.json" 
  - mvn spring-boot:run -Dspring-boot.run.arguments="--initDataFile=/usr/app/transfer/data/AccountsData.json"
 
+debug:
+
+
+    java "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005" -jar MoneyTransfer-1.0.jar
+    java "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=0.0.0.0:5005" -jar MoneyTransfer-1.0.jar 
+    java "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0.0.0.0:5005" -jar MoneyTransfer-1.0.jar
+    java "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0.0.0.0:5005" -jar MoneyTransfer-1.0.jar --initDataFile=/usr/app/transfer/data/AccountsData.json
+
+
+    
 
 
 ######  Tests run:
 
  - mvn test -Dtest=AddAccountServiceIT
  - mvn test -Dtest=TransactionServiceIT
- - mvn test -Dtest=AddAccountServiceChangeAmountForAccountTest
- - mvn test -Dtest=AddAccountServiceChangeAmountForAccountTest#function_changeAmountForAccount_AccountOK_CURRENCY_NOT_OK
+ - mvn test -Dtest=FileAmountUpdaterTest
+ - mvn test -Dtest=FileAmountUpdaterTest#havingDifferentAccounts_changeAmounts_InFile
 
 
 ###### ActiveMq

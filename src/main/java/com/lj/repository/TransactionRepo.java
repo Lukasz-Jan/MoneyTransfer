@@ -4,7 +4,7 @@ import java.util.List;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
-import com.lj.entity.Transaction;
+import com.lj.entities.Transaction;
 
 public interface TransactionRepo extends CrudRepository<Transaction, String> {
 

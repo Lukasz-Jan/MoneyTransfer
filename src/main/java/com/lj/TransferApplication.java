@@ -8,13 +8,12 @@ package com.lj;
 
 import java.io.IOException;
 import javax.annotation.PostConstruct;
-import com.lj.service.AddAccountService;
+import com.lj.services.AddAccountService;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -40,8 +39,9 @@ public class TransferApplication {
     }
 
     @Autowired
-    public TransferApplication(@Value("${spring.activemq.broker-url}") String brokerUrl, AddAccountService accountSetUp) {
-
+    public TransferApplication(@Value("${spring.activemq.broker-url}") String brokerUrl,
+                               AddAccountService accountSetUp
+    ) {
         this.brokerUrl = brokerUrl;
         this.accountSetUp = accountSetUp;
     }
@@ -51,7 +51,6 @@ public class TransferApplication {
 
         ConfigurableApplicationContext appCtx = SpringApplication.run(TransferApplication.class, args);
     }
-
 
     @Bean
     public ActiveMQConnectionFactory activeMQConnectionFactory() {

@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import com.lj.entity.ServiceAgreement;
+import com.lj.entities.ServiceAgreement;
 
 @Repository
 public interface SaRepo extends CrudRepository<ServiceAgreement, Long> {

@@ -1,4 +1,4 @@
-package com.lj.entity;
+package com.lj.entities;
 
 
 import java.io.Serializable;
@@ -18,17 +18,18 @@ public class Account implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-//----------------------------------
+    public Account() {
+    }
 
-    @OneToMany(mappedBy = "account", cascade=CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<ServiceAgreement> agreements = new HashSet<>();
 
     public Set<ServiceAgreement> getAgreements() {
         return agreements;
-    };
+    }
 
     @Id
-    @Column(name="ACCT_ID", nullable=false, length=12)
+    @Column(name = "ACCT_ID", nullable = false, length = 12)
     private String acctId;
 
     @Temporal(TemporalType.DATE)
@@ -38,9 +39,6 @@ public class Account implements Serializable {
     @Version
     @Column(name = "VERSION")
     private Long version;
-
-    public Account() {
-    }
 
     public Account(String acctId, Date creDttm) {
         this.acctId = acctId;

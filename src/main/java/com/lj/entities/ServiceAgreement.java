@@ -1,4 +1,4 @@
-package com.lj.entity;
+package com.lj.entities;
 
 import java.io.Serializable;
 import javax.persistence.*;
@@ -18,9 +18,9 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Entity
+
 @Table(name="CI_SA")
 @NamedQuery(name="ServiceAgreement.findAll", query="SELECT s FROM ServiceAgreement s")
-
 public class ServiceAgreement implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -50,23 +50,6 @@ public class ServiceAgreement implements Serializable {
 
     @OneToMany(cascade=CascadeType.ALL, mappedBy="sa", fetch = FetchType.LAZY)
     private Set<Transaction> transactions = new HashSet<Transaction>();
-
-//    public Set<Transaction> getTransactions() { return transactions; }
-//
-//
-//    public void setTransactions(Set<Transaction> transactions) { this.transactions = transactions; }
-//
-//    public void setAccount(Account account) {
-//        this.account = account;
-//    }
-//
-//    public Account getAccount() {
-//        return account;
-//    }
-//
-//
-//    public ServiceAgreement() {
-//    }
 
     private ServiceAgreement(Date creDttm, String currencyCd, Account acct, String saStatus) {
 
