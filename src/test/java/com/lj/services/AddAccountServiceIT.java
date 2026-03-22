@@ -57,7 +57,10 @@ public class AddAccountServiceIT implements TestCommons {
     @Autowired
     public AddAccountServiceIT(@Value("${initDataFile}") String initFile) throws IOException {
 
-        final String resourcePath = "classpath:data/" + initFile;
+        String resourcePath = initFile;
+        if(!initFile.contains("classpath:data")) {
+            resourcePath = "classpath:data/" + initFile;
+        }
 
         final ResourceLoader resourceLoader = new DefaultResourceLoader();
         final Resource resource = resourceLoader.getResource(resourcePath);

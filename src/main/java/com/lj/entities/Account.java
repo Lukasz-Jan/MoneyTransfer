@@ -75,7 +75,6 @@ public class Account implements Serializable {
         private Date creDttm;
 
         public Account build() {
-
             return new Account(acctId, creDttm);
         }
 

@@ -29,7 +29,9 @@ class FileAmountUpdaterTest {
 
     private static final Logger logger = LoggerFactory.getLogger(FileAmountUpdaterTest.class);
     private static final String RESOURCE_LOADER_PATH = "classpath:data/initDataForChangeAmountTest.json";
-    private final FileAmountUpdater testedInstance = new FileAmountUpdater(RESOURCE_LOADER_PATH);
+
+    private final FileFetchService fileServiceSimulate = new FileFetchService();
+    private final FileAmountUpdater testedInstance = new FileAmountUpdater(RESOURCE_LOADER_PATH, fileServiceSimulate);
 
     @Mock
     private AcctRepo acctRepoMock;
@@ -44,6 +46,7 @@ class FileAmountUpdaterTest {
 
     @Test
     public void givenFilePath_instanceCreatedTest() {
+
         assertNotNull(testedInstance);
     }
 

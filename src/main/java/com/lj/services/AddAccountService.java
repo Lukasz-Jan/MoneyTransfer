@@ -2,7 +2,6 @@ package com.lj.services;
 
 import java.io.*;
 import java.math.BigDecimal;
-import java.nio.file.Files;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -11,18 +10,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.DefaultResourceLoader;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lj.gen.json.mappings.transfer.CurrencyAmount;
 import com.lj.gen.json.mappings.transfer.TransfersystemSchema;
 import com.lj.repository.*;
 import com.lj.entities.*;
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 @Service
 public class AddAccountService {
@@ -30,43 +24,15 @@ public class AddAccountService {
     private static final Logger logger = LoggerFactory.getLogger(AddAccountService.class);
     private final AcctRepo accountRepo;
     private final File initDataFile;
+    private final FileFetchService fileService;
 
     @Autowired
-    public AddAccountService(AcctRepo accountRepo, @Value("${initDataFile}") String initFileName) {
+    public AddAccountService(AcctRepo accountRepo,
+                             @Value("${initDataFile}") String initFileName,
+                             FileFetchService fileService) throws IOException {
 
-        File file = new File(initFileName);
-
-        if (file.exists()) {
-
-            initDataFile = file;
-            logger.info("init file + " + initFileName + " found in filesystem: " + initFileName);
-        } else {
-
-            logger.info("init file " + initFileName + " not found in file system " + initFileName);
-            String resourcePath = "classpath:data/" + initFileName;
-
-            logger.info("Init resource file: " + resourcePath);
-
-            ResourceLoader resourceLoader = new DefaultResourceLoader();
-            Resource resource = resourceLoader.getResource(resourcePath);
-
-            try {
-
-                if (!resource.isFile()) {
-                    logger.info("Resource not a file");
-                    this.initDataFile = File.createTempFile("initFile", null);
-                    logger.info("Init file created from input stream: " + this.initDataFile.getPath());
-                    Files.copy(resource.getInputStream(), this.initDataFile.toPath(), REPLACE_EXISTING);
-                } else {
-                    logger.info("Resource is a file");
-                    this.initDataFile = resource.getFile();
-                    logger.info("Init file fetched from file system: " + this.initDataFile.getPath());
-                }
-            } catch (IOException e) {
-                logger.error("Initial data file not loaded");
-                throw new RuntimeException(e);
-            }
-        }
+        this.fileService = fileService;
+        this.initDataFile = this.fileService.fetchFile(initFileName);
         this.accountRepo = accountRepo;
     }
 

@@ -18,23 +18,22 @@ import static org.mockito.Mockito.*;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class AddAccountServiceInitMethodTest {
 
-    private final String INITIAL_DATA_PATH = "src/test/resources/data/initAmountsForTest.json";
-    private final File initializationDataFile;
+    private static final String RESOURCE_LOADER_PATH = "classpath:data/initAmountsForTest.json";
     private final Utils jsonHelper = new Utils();
     private final AcctRepo acctRepoMock = mock(AcctRepo.class);
-
     private final Map<String, List<ServiceAgreement>> checkingAccountsAndAgreementsMap = new HashMap<>();
     private final HashMap<CompositeId, Double> checkingAccountedMoneyMap = new HashMap<>();
-
+    private final FileFetchService fileServiceSimulate = new FileFetchService();
     private AddAccountService testedInstance;
+    private final File initializationDataFile;
 
-    public AddAccountServiceInitMethodTest() {
-        this.initializationDataFile = new File(INITIAL_DATA_PATH);
+    public AddAccountServiceInitMethodTest() throws IOException {
+        initializationDataFile = fileServiceSimulate.fetchFile(RESOURCE_LOADER_PATH);
     }
 
     @BeforeAll
-    public void init() {
-        testedInstance = new AddAccountService(acctRepoMock, "initAmountsForTest.json");
+    public void init() throws IOException {
+        testedInstance = new AddAccountService(acctRepoMock, RESOURCE_LOADER_PATH, fileServiceSimulate);
     }
 
     @BeforeEach
