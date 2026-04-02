@@ -3,12 +3,14 @@ package com.lj.services.jsonutils;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.lj.dto.AbstractDto;
 import com.lj.dto.AccountDto;
 import com.lj.dto.ServiceAgreementDto;
 import com.lj.dto.TransactionDto;
 import com.lj.gen.json.mappings.transfer.Account;
 import com.lj.gen.json.mappings.transfer.CurrencyAmount;
 import com.lj.gen.json.mappings.transfer.TransfersystemSchema;
+
 import java.io.*;
 import java.math.BigDecimal;
 import java.util.*;
@@ -26,14 +28,16 @@ public class Utils {
 
         Set<Account> accounts = new HashSet<>(transfer.getAccounts());
 
-        Set<AccountDto> ret = new HashSet<>();
-        for(Account acc: accounts) {
+        Set<AccountDto> allAccountsDtoSet = new HashSet<>();
 
-            AccountDto accDto = new AccountDto();
-            accDto.getObjectDto(acc);
-            ret.add(accDto);
+        for (Account acc : accounts) {
+            AccountDto accontDto = AccountDto.builder()
+                    .acctId(acc.getAccountNumber())
+                    .build();
+            allAccountsDtoSet.add(accontDto);
         }
-        return ret;
+
+        return allAccountsDtoSet;
     }
 
     public Set<Account> getAllJsonAccounts(File file) {
@@ -67,9 +71,9 @@ public class Utils {
 
         Set<CurrencyAmount> ret = new HashSet<>();
 
-        for(Account acc: accounts) {
+        for (Account acc : accounts) {
             List<CurrencyAmount> currencyAmounts = acc.getCurrencyAmounts();
-            for(CurrencyAmount am: currencyAmounts) {
+            for (CurrencyAmount am : currencyAmounts) {
                 ret.add(am);
             }
         }
@@ -118,7 +122,7 @@ public class Utils {
 
             String accountNo = acc.getAccountNumber();
 
-            if(accountNo.equals(acctId)) {
+            if (accountNo.equals(acctId)) {
 
                 List<CurrencyAmount> currencyAmounts = acc.getCurrencyAmounts();
 
@@ -126,12 +130,16 @@ public class Utils {
 
                     BigDecimal amount = BigDecimal.valueOf(currencyInAccount.getAmount());
 
-                    ServiceAgreementDto saDto = new ServiceAgreementDto();
-                    saDto.setCurrencyCd(currencyInAccount.getCurrency());
 
-                    TransactionDto txDto = new TransactionDto();
-                    txDto.setSa(saDto);
-                    txDto.setCurAmt(amount);
+                    ServiceAgreementDto saDto = ServiceAgreementDto
+                            .builder()
+                            .currencyCd(currencyInAccount.getCurrency())
+                            .build();
+
+
+                    TransactionDto txDto = TransactionDto.builder()
+                            .sa(saDto)
+                            .curAmt(amount).build();
                     txs.add(txDto);
                 }
             }

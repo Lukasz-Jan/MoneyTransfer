@@ -2,10 +2,9 @@ package com.lj.services;
 
 import java.io.*;
 import java.math.BigDecimal;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Predicate;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,43 +68,65 @@ public class AddAccountService {
 
         Optional<Account> accountOpt = accountRepo.findById(acctNo);
 
+        Account account;
         if (!accountOpt.isPresent()) {
-            accountOpt = Optional.of(new Account.Builder().setAcctId(acctNo).setCreDttm(creationDate).build());
-        }
-
-        Account account = accountOpt.get();
+            account = Account.builder()
+                    .acctId(acctNo)
+                    .creDttm(creationDate)
+                    .agreements(new HashSet<>())
+                    .build();
+        } else account = accountOpt.get();
 
         ServiceAgreement sa = addSa(creationDate, currency, account);
         addTransaction(sa, creationDate, amount);
-        accountRepo.save(accountOpt.get());
+        accountRepo.save(account);
         logger.info("Account " + account.getAcctId() + " income " + amount + " " + currency);
+
     }
 
-    private void addTransaction(ServiceAgreement sa, Date crDttm, BigDecimal amount) {
+private void addTransaction(ServiceAgreement sa, Date crDttm, BigDecimal amount) {
 
-        Predicate<Transaction> isSameTransaction = tr -> (tr.getFreezeDttm().equals(crDttm)
-                && tr.getCurAmt().equals(amount));
-        Optional<Transaction> theSameTransactionOpt = sa.getTransactions().stream().filter(isSameTransaction).findAny();
+    Predicate<Transaction> isSameTransaction = tr -> (tr.getFreezeDttm()
+            .equals(crDttm) && tr.getCurAmt()
+            .equals(amount));
+    Optional<Transaction> theSameTransactionOpt = sa
+            .getTransactions()
+            .stream()
+            .filter(isSameTransaction)
+            .findAny();
 
-        if (!theSameTransactionOpt.isPresent()) {
+    if (!theSameTransactionOpt.isPresent()) {
 
-            Transaction tr = new Transaction.Builder().setFreezeDttm(crDttm).setCurAmt(amount).setSa(sa).build();
-            sa.getTransactions().add(tr);
-        }
+        Transaction tr = Transaction.builder()
+                .sa(sa)
+                .freezeDttm(crDttm)
+                .curAmt(amount)
+                .build();
+
+        sa.getTransactions().add(tr);
     }
+}
 
-    private ServiceAgreement addSa(Date creationDate, String currency, Account acctDto) {
+private ServiceAgreement addSa(Date creationDate, String currency, Account acctDto) {
 
-        Optional<ServiceAgreement> saOpt = acctDto.getAgreements().stream()
-                .filter(sa -> (sa.getCurrencyCd().equals(currency))).findFirst();
+    Optional<ServiceAgreement> saOpt = acctDto
+            .getAgreements().stream()
+            .filter(sa -> (sa.getCurrencyCd().equals(currency)))
+            .findFirst();
 
-        if (!saOpt.isPresent()) {
-            ServiceAgreement sa = new ServiceAgreement.Builder().setCreDttm(creationDate).setCurrencyCd(currency)
-                    .setAccount(acctDto).build();
-            acctDto.getAgreements().add(sa);
-            return sa;
-        } else {
-            return saOpt.get();
-        }
+    if (!saOpt.isPresent()) {
+        ServiceAgreement sa = ServiceAgreement.builder()
+                .creDttm(creationDate)
+                .currencyCd(currency)
+                .account(acctDto)
+                .transactions(new HashSet<>())
+                .build();
+
+        acctDto.getAgreements()
+                .add(sa);
+        return sa;
+    } else {
+        return saOpt.get();
     }
+}
 }

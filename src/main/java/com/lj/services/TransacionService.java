@@ -89,8 +89,14 @@ public class TransacionService {
     private void processIncome(ServiceAgreement sa, TransferRequestType req) {
 
         Date currentDate = new Date();
-        Transaction incomeTx = new Transaction.Builder().setSa(sa).setFreezeDttm(currentDate)
-                .setCurAmt(req.getQuantity()).build();
+
+        Transaction incomeTx = Transaction.builder()
+                .sa(sa)
+                .freezeDttm(new Date())
+                .curAmt(req.getQuantity())
+                .build();
+
+
         sa.getTransactions().add(incomeTx);
 
         logger.info("Account " + sa.getAccount().getAcctId() + " income of: " + req.getQuantity());
@@ -114,8 +120,12 @@ public class TransacionService {
 
         if (balance.compareTo(amountArg.abs()) >= 0) {
 
-            Transaction outcomeTx = new Transaction.Builder().setSa(sa).setFreezeDttm(currentDate).setCurAmt(amountArg)
+            Transaction outcomeTx = Transaction.builder()
+                    .sa(sa)
+                    .freezeDttm(currentDate)
+                    .curAmt(amountArg)
                     .build();
+
             sa.getTransactions().add(outcomeTx);
             logger.info("Request " + req.getRequestId() + " outcome of: " + amountArg);
 

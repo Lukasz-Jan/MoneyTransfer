@@ -38,4 +38,3 @@ debug:
 
 ###### ActiveMq
 - Request queue name and response queue name are defined in application properties
-- ActiveMq shall be installed and started separately, web description https://activemq.apache.org/

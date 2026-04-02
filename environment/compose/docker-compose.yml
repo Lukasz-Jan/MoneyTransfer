@@ -1,0 +1,45 @@
+services:
+  transfer_one:
+    image:
+      transfer_c1
+    container_name: transfer_one
+    ports:
+      - 127.0.0.1:8082:8082
+      - 35005:5005
+    hostname: transfer-one-host
+    restart: "no"
+    environment:
+      - spring.activemq.broker-url=tcp://active-host:61616
+
+  transfer_two:
+      image:
+        transfer_c1
+      container_name: transfer_two
+      hostname: transfer-two-host
+      ports:
+        - 127.0.0.1:8083:8082
+        - 35006:5005
+      restart: "no"
+      environment:
+        - spring.activemq.broker-url=tcp://active-host:61616
+
+
+  active_mq:
+    image:
+      apache/activemq:latest
+    container_name: active-mq
+    expose:
+      - "61616"
+    ports:
+      - "61616:61616"   # JMS
+      - "8161:8161"
+    links:
+      - transfer_one
+      - transfer_two
+    restart: "no"
+
+    hostname: active-host
+
+
+
+
