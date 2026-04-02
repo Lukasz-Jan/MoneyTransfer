@@ -3,7 +3,6 @@ package com.lj.services;
 import java.io.*;
 import java.math.BigDecimal;
 import java.util.*;
-
 import com.lj.gen.json.mappings.transfer.CurrencyAmount;
 import com.lj.services.jsonutils.Utils;
 import org.junit.jupiter.api.*;
@@ -94,6 +93,7 @@ public class AddAccountServiceInitMethodTest {
             }
         }
     }
+
 
     @Test
     public void givenAccountsInFile_whenServerStarted_thenSaveToPersistCalled() throws JsonProcessingException, IOException {

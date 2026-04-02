@@ -69,7 +69,7 @@ All other fields have values matching the equivalent fields from the incoming re
 
 On startup, the application imports the account information from a JSON file. 
 A path to the file is specified as a commandline argument to the applicatio`n. 
-On each update to the account information stored in the application is updated too.
+On each update to the account information stored in the JSON file is updated too.
 
 #### JSON Schema
 
