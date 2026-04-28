@@ -38,3 +38,10 @@ debug:
 
 ###### ActiveMq
 - Request queue name and response queue name are defined in application properties
+- ActiveMq shall be installed and started separately 
+  if running outside docker,
+  web description https://activemq.apache.org/
+
+###### Docker available
+- Possible to start transfer server with activeMq via
+  docker compose - script startApplication.sh

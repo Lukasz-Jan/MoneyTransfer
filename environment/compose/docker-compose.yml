@@ -35,7 +35,7 @@ services:
       - "8161:8161"
     links:
       - transfer_one
-      - transfer_two
+#      - transfer_two
     restart: "no"
 
     hostname: active-host
