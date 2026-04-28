@@ -7,10 +7,11 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageListener;
-import javax.jms.TextMessage;
+import jakarta.jms.JMSException;
+import jakarta.jms.Message;
+import jakarta.jms.MessageListener;
+import jakarta.jms.TextMessage;
+import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -104,9 +105,11 @@ public class MessageListenerAdapter implements MessageListener {
         return ret;
     }
 
+    @SneakyThrows
     @JmsListener(destination = "${srcQueue}")
     @Override
-    public void onMessage(Message mss) {
+    public void onMessage(Message mss)
+    {
 
         if (mss instanceof TextMessage) {
 
@@ -123,7 +126,7 @@ public class MessageListenerAdapter implements MessageListener {
         }
     }
 
-    private TransferRequestType handleMessage(TextMessage jmsTxtMsg) {
+    private TransferRequestType handleMessage(TextMessage jmsTxtMsg) throws JMSException {
 
         TransferRequestType requestInstance = null;
         JAXBElement<TransferRequestType> jaxEl = null;
@@ -167,4 +170,5 @@ public class MessageListenerAdapter implements MessageListener {
         }
         return requestInstance;
     }
+
 }

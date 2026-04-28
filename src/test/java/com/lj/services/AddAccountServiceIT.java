@@ -1,10 +1,6 @@
 package com.lj.services;
 
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.lj.TransferApplication;
 import java.io.File;
 import java.io.IOException;
@@ -36,6 +32,8 @@ import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.test.annotation.DirtiesContext;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 // starting:
 //	mvn failsafe:integration-test

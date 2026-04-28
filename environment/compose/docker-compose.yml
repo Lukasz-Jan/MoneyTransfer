@@ -11,17 +11,17 @@ services:
     environment:
       - spring.activemq.broker-url=tcp://active-host:61616
 
-  transfer_two:
-      image:
-        transfer_c1
-      container_name: transfer_two
-      hostname: transfer-two-host
-      ports:
-        - 127.0.0.1:8083:8082
-        - 35006:5005
-      restart: "no"
-      environment:
-        - spring.activemq.broker-url=tcp://active-host:61616
+#  transfer_two:
+#      image:
+#        transfer_c1
+#      container_name: transfer_two
+#      hostname: transfer-two-host
+#      ports:
+#        - 127.0.0.1:8083:8082
+#        - 35006:5005
+#      restart: "no"
+#      environment:
+#        - spring.activemq.broker-url=tcp://active-host:61616
 
 
   active_mq:

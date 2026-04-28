@@ -1,11 +1,10 @@
 package com.lj.entities;
 
 import java.io.Serializable;
-import javax.persistence.*;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
-
+import jakarta.persistence.*;
 import lombok.*;
 
 /**

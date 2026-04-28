@@ -7,8 +7,8 @@ package com.lj;
  */
 
 import java.io.IOException;
-import javax.annotation.PostConstruct;
 import com.lj.services.AddAccountService;
+import jakarta.annotation.PostConstruct;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
