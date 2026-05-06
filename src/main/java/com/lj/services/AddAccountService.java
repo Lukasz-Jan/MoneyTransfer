@@ -42,11 +42,10 @@ public class AddAccountService {
         final InputStream streamWithJson = new FileInputStream(initDataFile);
 
         TransfersystemSchema transfer = mapper.readValue(streamWithJson, TransfersystemSchema.class);
-        List<com.lj.gen.json.mappings.transfer.Account> accounts = transfer.getAccounts();
 
         Date creationDate = new Date();
 
-        for (com.lj.gen.json.mappings.transfer.Account acc : accounts) {
+        for (com.lj.gen.json.mappings.transfer.Account acc : transfer.getAccounts()) {
 
             logger.info("Adding account: " + acc.getAccountNumber());
 

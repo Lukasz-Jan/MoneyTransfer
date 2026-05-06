@@ -6,15 +6,22 @@ More detailed description in file description.md.
 
 ##### How to start?
 ######  Start with data initialized in application property
+###### MongoDb address shall be given as parameter
+
  - java -jar MoneyTransfer-1.0.jar
+ - java -jar MoneyTransfer-1.0.jar --mongoConnString=mongodb://127.0.0.1:27017/test
 ######  Start with data initialized from inner resource
- - java -jar MoneyTransfer-1.0.jar --initDataFile=AccountsData.json
+ - java -jar MoneyTransfer-1.0.jar --initDataFile=AccountsData.json --mongoConnString=mongodb://127.0.0.1:27017/test
 ######  Starting with init data from file system
- - java -jar MoneyTransfer-1.0.jar --initDataFile=/usr/app/transfer/data/AccountsData.json
-######  Maven start:
- - mvn spring-boot:run
- - mvn spring-boot:run -Dspring-boot.run.arguments="--initDataFile=AccountsData.json" 
- - mvn spring-boot:run -Dspring-boot.run.arguments="--initDataFile=/usr/app/transfer/data/AccountsData.json"
+ - java -jar MoneyTransfer-1.0.jar --initDataFile=/usr/app/transfer/data/AccountsData.json --mongoConnString=mongodb://127.0.0.1:27017/test
+
+######  Maven start, mongoDb shall be started before:
+
+ - mvn spring-boot:run -Dspring-boot.run.arguments="--mongoConnString=mongodb://127.0.0.1:27017/test"
+ - mvn spring-boot:run -Dspring-boot.run.arguments="--mongoConnString=mongodb://127.0.0.1:27017/test --initDataFile=AccountsData.json"
+
+######  Docker start (all in one: transfer app, aciveMq, mongoDb, H2):
+- with script startApplication.sh
 
 debug:
 
@@ -45,3 +52,7 @@ debug:
 ###### Docker available
 - Possible to start transfer server with activeMq via
   docker compose - script startApplication.sh
+
+###### mongo db 
+- Initial data (initial amounts) 
+  written to mongodb as well as to H2 

@@ -1,11 +1,24 @@
 services:
+
+  mongodbsrv:
+    image:
+      mongodb/mongodb-community-server:latest
+    container_name: mongodbsrv
+    ports:
+      - "127.0.0.1:27017:27017"
+    hostname: mongo
+
+
   transfer_one:
     image:
       transfer_c1
+    depends_on:
+      - mongodbsrv
     container_name: transfer_one
     ports:
-      - 127.0.0.1:8082:8082
-      - 35005:5005
+      - "127.0.0.1:8082:8082"
+      - "35005:5005"
+      - "8080:8080"
     hostname: transfer-one-host
     restart: "no"
     environment:
@@ -37,7 +50,6 @@ services:
       - transfer_one
 #      - transfer_two
     restart: "no"
-
     hostname: active-host
 
 

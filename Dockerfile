@@ -8,6 +8,7 @@ RUN mkdir -p /usr/app/transfer
 RUN mkdir -p /usr/app/transfer/data
 
 COPY /src/main/resources/data/AccountsData.json /usr/app/transfer/data
+COPY /src/main/resources/data/AccountsData.jsonl /usr/app/transfer/data
 
 COPY target/MoneyTransfer-1.0.jar /usr/app/transfer
 
