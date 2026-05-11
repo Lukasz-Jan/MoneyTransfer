@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import com.lj.services.mongo.MongoCrudService;
 import jakarta.jms.JMSException;
 import jakarta.jms.Message;
 import jakarta.jms.MessageListener;
@@ -47,13 +48,19 @@ public class MessageListenerAdapter implements MessageListener {
 
     private final TransacionService trSrv;
 
+    private final MongoCrudService mongoCrudService;
+
     private final ResponseService respSrv;
 
     @Autowired
-    public MessageListenerAdapter(TransacionService trSrv, ResponseService respSrv, @Value("${messageXsd}") String requestResponseXsdPath) throws InstantiationException {
+    public MessageListenerAdapter(TransacionService trSrv, ResponseService respSrv,
+                                  @Value("${messageXsd}") String requestResponseXsdPath,
+                                  MongoCrudService mongoCrudService
+    ) throws InstantiationException {
 
         this.trSrv = trSrv;
         this.respSrv = respSrv;
+        this.mongoCrudService = mongoCrudService;
 
         String resourceFileName = fetchFileNameFromPath(requestResponseXsdPath);
         logger.info("Init xsd resource name: " + resourceFileName);
@@ -110,16 +117,15 @@ public class MessageListenerAdapter implements MessageListener {
     @Override
     public void onMessage(Message mss)
     {
-
         if (mss instanceof TextMessage) {
 
             TextMessage textXmlMsg = (TextMessage) mss;
             TransferRequestType requestInstance = handleMessage(textXmlMsg);
 
             if (requestInstance != null) {
-
                 logger.info("Request " + requestInstance.getRequestId() + " being processed");
                 OutcomeType outcome = trSrv.processRequest(requestInstance);
+                mongoCrudService.processRequest(requestInstance);
                 respSrv.sendResponseMessage(requestInstance, outcome);
             } else
                 logger.info("errors occured for request");

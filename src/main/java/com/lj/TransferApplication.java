@@ -7,7 +7,7 @@ package com.lj;
  */
 
 import java.io.IOException;
-import com.lj.services.AddAccountService;
+import com.lj.services.initial.InitialDatabaseImporter;
 import jakarta.annotation.PostConstruct;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.slf4j.Logger;
@@ -34,7 +34,7 @@ public class TransferApplication {
     private static final Logger log = LoggerFactory.getLogger(TransferApplication.class);
 
     private final String brokerUrl;
-    private final AddAccountService accountSetUp;
+    private final InitialDatabaseImporter accountSetUp;
 
     @PostConstruct
     private void init() throws JsonProcessingException, IOException {
@@ -43,7 +43,7 @@ public class TransferApplication {
 
     @Autowired
     public TransferApplication(@Value("${spring.activemq.broker-url}") String brokerUrl,
-                               AddAccountService accountSetUp
+                               InitialDatabaseImporter accountSetUp
     ) {
         this.brokerUrl = brokerUrl;
         this.accountSetUp = accountSetUp;

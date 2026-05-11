@@ -4,6 +4,7 @@ import java.io.*;
 import java.math.BigDecimal;
 import java.util.*;
 import com.lj.gen.json.mappings.transfer.CurrencyAmount;
+import com.lj.services.initial.InitialDatabaseImporter;
 import com.lj.services.jsonutils.Utils;
 import org.junit.jupiter.api.*;
 import org.mockito.Mockito;
@@ -15,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class AddAccountServiceInitMethodTest {
+public class InitialDatabaseImporterInitMethodTest {
 
     private static final String RESOURCE_LOADER_PATH = "classpath:data/initAmountsForTest.json";
     private final Utils jsonHelper = new Utils();
@@ -23,16 +24,16 @@ public class AddAccountServiceInitMethodTest {
     private final Map<String, List<ServiceAgreement>> checkingAccountsAndAgreementsMap = new HashMap<>();
     private final HashMap<CompositeId, Double> checkingAccountedMoneyMap = new HashMap<>();
     private final FileFetchService fileServiceSimulate = new FileFetchService();
-    private AddAccountService testedInstance;
+    private InitialDatabaseImporter testedInstance;
     private final File initializationDataFile;
 
-    public AddAccountServiceInitMethodTest() throws IOException {
+    public InitialDatabaseImporterInitMethodTest() throws IOException {
         initializationDataFile = fileServiceSimulate.fetchFile(RESOURCE_LOADER_PATH);
     }
 
     @BeforeAll
     public void init() throws IOException {
-        testedInstance = new AddAccountService(acctRepoMock, RESOURCE_LOADER_PATH, fileServiceSimulate);
+        testedInstance = new InitialDatabaseImporter(acctRepoMock, RESOURCE_LOADER_PATH, fileServiceSimulate);
     }
 
     @BeforeEach

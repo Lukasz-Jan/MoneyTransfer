@@ -27,8 +27,6 @@ public class MoneyRequestBuilder {
 
         public JAXBElement<TransferRequestType> buildReqEl() {
 
-            System.out.println("buildReqEl from test package");
-
             TransferRequestType request = objFact.createTransferRequestType();
             JAXBElement<TransferRequestType> el = objFact.createTransferRequest(request);
             request.setRequestId(generateUUID());
