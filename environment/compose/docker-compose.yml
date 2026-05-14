@@ -6,19 +6,31 @@ services:
     container_name: mongodbsrv
     ports:
       - "127.0.0.1:27017:27017"
-    hostname: mongo
 
+
+  db_transfer_pg:
+    image: postgres:latest
+    container_name: db_transfer_pg
+    restart: "no"
+    environment:
+      POSTGRES_PASSWORD: "pwd"
+      POSTGRES_USER: "myuser"
+      POSTGRES_DB: "transfer_db"
+    ports:
+      - "127.0.0.1:5432:5432"
+    mem_limit: "1000m"
+    command: docker-entrypoint.sh postgres
 
   transfer_one:
     image:
       transfer_c1
     depends_on:
       - mongodbsrv
+      - db_transfer_pg
     container_name: transfer_one
     ports:
       - "127.0.0.1:8082:8082"
       - "35005:5005"
-      - "8080:8080"
     hostname: transfer-one-host
     restart: "no"
     environment:
@@ -27,8 +39,9 @@ services:
 #  transfer_two:
 #      image:
 #        transfer_c1
+#      depends_on:
+#        - mongodbsrv
 #      container_name: transfer_two
-#      hostname: transfer-two-host
 #      ports:
 #        - 127.0.0.1:8083:8082
 #        - 35006:5005
