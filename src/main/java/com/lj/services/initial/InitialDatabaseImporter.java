@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -51,44 +52,47 @@ public class InitialDatabaseImporter {
 
         TransfersystemSchema transfer = mapper.readValue(streamWithJson, TransfersystemSchema.class);
 
-        Date creationDate = new Date();
-
         for (com.lj.gen.json.mappings.transfer.Account acc : transfer.getAccounts()) {
 
-            logger.info("Adding account: " + acc.getAccountNumber());
+            accountRepo.findById(acc.getAccountNumber()).ifPresentOrElse(
 
-            String accountNo = acc.getAccountNumber();
-            List<CurrencyAmount> currencyAmounts = acc.getCurrencyAmounts();
+                    account -> logger.info("Account " + account.getAcctId() + " already present "),
 
-            for (CurrencyAmount currencyInAccount : currencyAmounts) {
-                BigDecimal amount = BigDecimal.valueOf(currencyInAccount.getAmount());
-                saveAccountAgreementsAndTransactions(currencyInAccount.getCurrency(), amount, accountNo,
-                        creationDate);
-            }
+                    () -> {
+                        Date creationDate = new Date();
 
+                        logger.info("Adding account: " + acc.getAccountNumber());
+
+                        Account account = Account.builder()
+                                .acctId(acc.getAccountNumber())
+                                .creDttm(creationDate)
+                                .agreements(new HashSet<>())
+                                .build();
+
+                        List<CurrencyAmount> currencyAmounts = acc.getCurrencyAmounts();
+
+                        for (CurrencyAmount currencyInAccount : currencyAmounts) {
+
+                            BigDecimal amount = BigDecimal.valueOf(currencyInAccount.getAmount());
+                            attachAgreementsAndTransactions(currencyInAccount.getCurrency(), amount, acc.getAccountNumber(),
+                                    creationDate, account);
+                        }
+
+                        accountRepo.save(account);
+                        logger.info("Added account: " + acc.getAccountNumber());
+                    }
+            );
         }
         streamWithJson.close();
     }
 
-    private void saveAccountAgreementsAndTransactions(String currency, BigDecimal amount, String acctNo,
-                                                      Date creationDate) {
-
-        Optional<Account> accountOpt = accountRepo.findById(acctNo);
-
-        Account account;
-        if (!accountOpt.isPresent()) {
-            account = Account.builder()
-                    .acctId(acctNo)
-                    .creDttm(creationDate)
-                    .agreements(new HashSet<>())
-                    .build();
-        } else account = accountOpt.get();
+    private void attachAgreementsAndTransactions(String currency, BigDecimal amount, String acctNo,
+                                                 Date creationDate, Account account) {
 
         ServiceAgreement sa = addSa(creationDate, currency, account);
         addTransaction(sa, creationDate, amount);
-        accountRepo.save(account);
-        logger.info("Account " + account.getAcctId() + " income " + amount + " " + currency);
 
+        logger.info("Attaching income " + amount + " " + currency);
     }
 
     private void addTransaction(ServiceAgreement sa, Date crDttm, BigDecimal amount) {
