@@ -1,6 +1,6 @@
 #!/bin/bash
 
-container_name="mongodb"
+container_name=mongodb
 
 if docker inspect "$container_name" > /dev/null 2>&1; then
     echo "The container $container_name exists."
@@ -17,13 +17,3 @@ else
     echo "Starting mongodb to build integration tests."
     docker run --name mongodb -p 27017:27017 -d mongodb/mongodb-community-server:latest
 fi
-
-cd ../
-mvn clean install
-echo "Stopping mongodb after build."
-docker stop mongodb
-docker rm mongodb
-
-
-docker build -t "transfer_c1" .
-cd ./environment

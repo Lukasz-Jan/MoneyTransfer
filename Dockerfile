@@ -1,8 +1,4 @@
-FROM ubuntu:22.04
-
-RUN apt-get update
-
-RUN apt install -y openjdk-21-jdk
+FROM eclipse-temurin:21-jre-alpine-3.23
 
 RUN mkdir -p /usr/app/transfer
 RUN mkdir -p /usr/app/transfer/data

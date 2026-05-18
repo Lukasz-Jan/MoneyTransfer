@@ -9,7 +9,7 @@ services:
 
 
   db_transfer_pg:
-    image: postgres:latest
+    image: postgres:17-alpine
     container_name: db_transfer_pg
     restart: "no"
     environment:
@@ -21,13 +21,13 @@ services:
     mem_limit: "1000m"
     command: docker-entrypoint.sh postgres
 
-  transfer_one:
+  consumer_one:
     image:
       transfer_c1
     depends_on:
       - mongodbsrv
       - db_transfer_pg
-    container_name: transfer_one
+    container_name: consumer_one
     ports:
       - "127.0.0.1:8082:8082"
       - "35005:5005"
@@ -36,18 +36,33 @@ services:
     environment:
       - spring.activemq.broker-url=tcp://active-host:61616
 
-#  transfer_two:
-#      image:
-#        transfer_c1
-#      depends_on:
-#        - mongodbsrv
-#      container_name: transfer_two
-#      ports:
-#        - 127.0.0.1:8083:8082
-#        - 35006:5005
-#      restart: "no"
-#      environment:
-#        - spring.activemq.broker-url=tcp://active-host:61616
+  consumer_two:
+      image:
+        transfer_c1
+      depends_on:
+        - mongodbsrv
+        - db_transfer_pg
+      container_name: consumer_two
+      ports:
+        - 127.0.0.1:8083:8082
+        - 35006:5005
+      restart: "no"
+      environment:
+        - spring.activemq.broker-url=tcp://active-host:61616
+
+  consumer_three:
+    image:
+      transfer_c1
+    depends_on:
+      - mongodbsrv
+      - db_transfer_pg
+    container_name: consumer_three
+    ports:
+      - 127.0.0.1:8084:8082
+      - 35007:5005
+    restart: "no"
+    environment:
+      - spring.activemq.broker-url=tcp://active-host:61616
 
 
   active_mq:
@@ -60,8 +75,8 @@ services:
       - "61616:61616"   # JMS
       - "8161:8161"
     links:
-      - transfer_one
-#      - transfer_two
+      - consumer_one
+      - consumer_two
     restart: "no"
     hostname: active-host
 

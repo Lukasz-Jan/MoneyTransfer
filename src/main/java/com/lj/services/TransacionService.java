@@ -1,6 +1,5 @@
 package com.lj.services;
 
-
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.Optional;
@@ -45,11 +44,9 @@ public class TransacionService {
 
         Supplier<OutcomeType> sup = () -> notFound(req.getRequestId());
 
-        OutcomeType out = Optional.ofNullable(sa)
+        return Optional.ofNullable(sa)
                 .map(saF -> prosessCreditDebit(sa, req))
                 .orElseGet(sup);
-
-        return out;
     }
 
     private ServiceAgreement findSa(TransferRequestType req) {
@@ -57,18 +54,15 @@ public class TransacionService {
         String saCurrency = req.getCurrency().trim();
         String accountNumber = req.getTargetAccountNumber();
 
-        ServiceAgreement saFound = acctRepo.findById(accountNumber).map(acct -> {
-
-            ServiceAgreement saInner = acct.getAgreements()
-                    .stream()
-                    .filter(sa -> sa.getCurrencyCd().equals(saCurrency))
-                    .findFirst()
-                    .map(sa -> sa)
-                    .orElse(null);
-            return saInner;
-        }).orElse(null);
-
-        return saFound;
+        return acctRepo
+                .findById(accountNumber)
+                .map(acct ->
+                        acct.getAgreements()
+                                .stream()
+                                .filter(sa -> sa.getCurrencyCd().equals(saCurrency))
+                                .findFirst()
+                                .orElse(null)
+                ).orElse(null);
     }
 
 
@@ -88,8 +82,6 @@ public class TransacionService {
 
     private void processIncome(ServiceAgreement sa, TransferRequestType req) {
 
-        Date currentDate = new Date();
-
         Transaction incomeTx = Transaction.builder()
                 .sa(sa)
                 .freezeDttm(new Date())
@@ -99,7 +91,7 @@ public class TransacionService {
 
         sa.getTransactions().add(incomeTx);
 
-        logger.info("Account " + sa.getAccount().getAcctId() + " income of: " + req.getQuantity());
+        logger.info("Account {} income of: {}", sa.getAccount().getAcctId(), req.getQuantity());
         BigDecimal countBalance = countBalance(sa);
         changeJsonFile(sa.getAccount().getAcctId(), sa.getCurrencyCd(), countBalance);
     }
@@ -108,13 +100,15 @@ public class TransacionService {
     private OutcomeType processOutcome(ServiceAgreement sa, TransferRequestType req) {
 
         Date currentDate = new Date();
-        BigDecimal balance = trRepo.findBySaId(sa.getSaId()).stream().map(tr -> tr.getCurAmt()).reduce(BigDecimal.ZERO,
-                BigDecimal::add);
+        BigDecimal balance = trRepo.
+                findBySaId(sa.getSaId())
+                .stream()
+                .map(tr -> tr.getCurAmt())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal amountArg = req.getQuantity();
 
         if (amountArg.compareTo(BigDecimal.ZERO) > 0) {
-
             amountArg = amountArg.negate();
         }
 
@@ -127,20 +121,21 @@ public class TransacionService {
                     .build();
 
             sa.getTransactions().add(outcomeTx);
-            logger.info("Request " + req.getRequestId() + " outcome of: " + amountArg);
+
+            logger.info("Request {} " + " outcome of: {}", req.getRequestId(), amountArg);
 
             BigDecimal countBalance = countBalance(sa);
             changeJsonFile(sa.getAccount().getAcctId(), sa.getCurrencyCd(), countBalance);
 
             return OutcomeType.ACCEPT;
         } else {
-            logger.info("Request " + req.getRequestId() + " outcome of: " + amountArg + " no funds");
+            logger.info("Request {} outcome of: {} no funds", req.getRequestId(), amountArg);
             return OutcomeType.REJECT;
         }
     }
 
     private OutcomeType notFound(String reqId) {
-        logger.info("Account not found for request " + reqId);
+        logger.info("Account not found for request {}", reqId);
         return OutcomeType.REJECT;
     }
 
@@ -150,10 +145,12 @@ public class TransacionService {
 
     private BigDecimal countBalance(ServiceAgreement sa) {
 
-        BigDecimal balance = trRepo.findBySaId(sa.getSaId()).stream().map(tr -> tr.getCurAmt()).reduce(BigDecimal.ZERO,
-                BigDecimal::add);
-        logger.info("Account " + sa.getAccount().getAcctId() + " balance: " + balance.toString() + " "
-                + sa.getCurrencyCd());
+        BigDecimal balance = trRepo
+                .findBySaId(sa.getSaId())
+                .stream()
+                .map(tr -> tr.getCurAmt())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        logger.info("Account {} balance: {} {} ", sa.getAccount().getAcctId(), balance, sa.getCurrencyCd());
         return balance;
     }
 }

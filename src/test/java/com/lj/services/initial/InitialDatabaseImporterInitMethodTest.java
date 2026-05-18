@@ -1,16 +1,20 @@
-package com.lj.services;
+package com.lj.services.initial;
 
-import java.io.*;
-import java.math.BigDecimal;
-import java.util.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.lj.entities.Account;
+import com.lj.entities.ServiceAgreement;
 import com.lj.gen.json.mappings.transfer.CurrencyAmount;
-import com.lj.services.initial.InitialDatabaseImporter;
+import com.lj.repository.AcctRepo;
+import com.lj.services.CompositeId;
+import com.lj.services.FileFetchService;
 import com.lj.services.jsonutils.Utils;
 import org.junit.jupiter.api.*;
 import org.mockito.Mockito;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.lj.entities.*;
-import com.lj.repository.*;
+
+import java.io.File;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -39,12 +43,12 @@ public class InitialDatabaseImporterInitMethodTest {
     @BeforeEach
     void setUp() {
 
-        when(acctRepoMock.save(any(com.lj.entities.Account.class)))
+        when(acctRepoMock.save(any(Account.class)))
                 .thenAnswer(invocation -> {
 
 
 
-                    com.lj.entities.Account savedAccount = (com.lj.entities.Account) invocation.getArguments()[0];
+                    Account savedAccount = (Account) invocation.getArguments()[0];
 
                     System.out.println("savedAccount: " + savedAccount.getAcctId());
 

@@ -10,7 +10,7 @@ import org.springframework.data.mongodb.core.SimpleMongoClientDatabaseFactory;
 public class MongoConfig {
 
     @Bean
-    public MongoTemplate mongoTemplate(@Value("${mongoConnString}") String connString) throws Exception {
+    public MongoTemplate mongoTemplate(@Value("${mongoConnString}") String connString) {
         return new MongoTemplate(new SimpleMongoClientDatabaseFactory(connString));
     }
 }

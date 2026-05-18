@@ -1,7 +1,33 @@
-package com.lj.services;
+package com.lj.services.initial;
 
 
 import com.lj.TransferApplication;
+import com.lj.dto.AccountDto;
+import com.lj.dto.TransactionDto;
+import com.lj.entities.Account;
+import com.lj.entities.ServiceAgreement;
+import com.lj.entities.Transaction;
+import com.lj.gen.json.mappings.transfer.CurrencyAmount;
+import com.lj.repository.AcctRepo;
+import com.lj.repository.SaRepo;
+import com.lj.services.TestCommons;
+import com.lj.services.jsonutils.Utils;
+import org.hibernate.LazyInitializationException;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.function.Executable;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.test.annotation.DirtiesContext;
+
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -10,28 +36,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
-import com.lj.dto.AccountDto;
-import com.lj.dto.TransactionDto;
-import com.lj.gen.json.mappings.transfer.CurrencyAmount;
-import com.lj.repository.*;
-import org.hibernate.LazyInitializationException;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
-import org.junit.jupiter.api.function.Executable;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
-import com.lj.entities.*;
-import com.lj.services.jsonutils.Utils;
-import org.springframework.core.io.DefaultResourceLoader;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
-import org.springframework.test.annotation.DirtiesContext;
 
 import static org.junit.jupiter.api.Assertions.*;
 

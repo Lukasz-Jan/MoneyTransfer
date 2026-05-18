@@ -20,11 +20,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.mongodb.autoconfigure.MongoAutoConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
 import org.springframework.jms.core.JmsTemplate;
-import com.fasterxml.jackson.core.JsonProcessingException;
-
 
 @SpringBootApplication
 @EnableJpaRepositories(enableDefaultTransactions = false)
@@ -37,8 +36,12 @@ public class TransferApplication {
     private final InitialDatabaseImporter accountSetUp;
 
     @PostConstruct
-    private void init() throws JsonProcessingException, IOException {
-        accountSetUp.init();
+    private void init() throws IOException {
+        try {
+            accountSetUp.init();
+        } catch(DataIntegrityViolationException e) {
+            log.info("DataIntegrityViolationException while application init - expected while many consumers");
+        }
     }
 
     @Autowired
@@ -50,9 +53,9 @@ public class TransferApplication {
     }
 
 
-    public static void main(String[] args) throws InterruptedException {
-
+    public static void main(String[] args) {
         ConfigurableApplicationContext appCtx = SpringApplication.run(TransferApplication.class, args);
+        appCtx.registerShutdownHook();
     }
 
     @Bean

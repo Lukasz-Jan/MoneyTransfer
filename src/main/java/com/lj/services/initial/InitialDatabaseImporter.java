@@ -7,6 +7,7 @@ import com.lj.entities.Transaction;
 import com.lj.gen.json.mappings.transfer.CurrencyAmount;
 import com.lj.gen.json.mappings.transfer.TransfersystemSchema;
 import com.lj.repository.AcctRepo;
+import com.lj.repository.SaRepo;
 import com.lj.services.FileFetchService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +39,6 @@ public class InitialDatabaseImporter {
     public InitialDatabaseImporter(AcctRepo accountRepo,
                                    @Value("${initDataFile}") String initFileName,
                                    FileFetchService fileService) throws IOException {
-
         this.fileService = fileService;
         this.initDataFile = this.fileService.fetchFile(initFileName);
         this.accountRepo = accountRepo;
@@ -51,30 +51,26 @@ public class InitialDatabaseImporter {
         final InputStream streamWithJson = new FileInputStream(initDataFile);
 
         TransfersystemSchema transfer = mapper.readValue(streamWithJson, TransfersystemSchema.class);
+        Date creationDate = new Date();
+
 
         for (com.lj.gen.json.mappings.transfer.Account acc : transfer.getAccounts()) {
 
             accountRepo.findById(acc.getAccountNumber()).ifPresentOrElse(
 
                     account -> logger.info("Account " + account.getAcctId() + " already present "),
-
                     () -> {
-                        Date creationDate = new Date();
 
                         logger.info("Adding account: " + acc.getAccountNumber());
-
                         Account account = Account.builder()
                                 .acctId(acc.getAccountNumber())
                                 .creDttm(creationDate)
                                 .agreements(new HashSet<>())
                                 .build();
 
-                        List<CurrencyAmount> currencyAmounts = acc.getCurrencyAmounts();
-
-                        for (CurrencyAmount currencyInAccount : currencyAmounts) {
-
-                            BigDecimal amount = BigDecimal.valueOf(currencyInAccount.getAmount());
-                            attachAgreementsAndTransactions(currencyInAccount.getCurrency(), amount, acc.getAccountNumber(),
+                        for (CurrencyAmount currencyAmount : acc.getCurrencyAmounts()) {
+                            attachAgreementAndTransaction(currencyAmount.getCurrency(),
+                                    BigDecimal.valueOf(currencyAmount.getAmount()), acc.getAccountNumber(),
                                     creationDate, account);
                         }
 
@@ -86,12 +82,11 @@ public class InitialDatabaseImporter {
         streamWithJson.close();
     }
 
-    private void attachAgreementsAndTransactions(String currency, BigDecimal amount, String acctNo,
-                                                 Date creationDate, Account account) {
+    private void attachAgreementAndTransaction(String currency, BigDecimal amount, String acctNo,
+                                               Date creationDate, Account account) {
 
         ServiceAgreement sa = addSa(creationDate, currency, account);
         addTransaction(sa, creationDate, amount);
-
         logger.info("Attaching income " + amount + " " + currency);
     }
 

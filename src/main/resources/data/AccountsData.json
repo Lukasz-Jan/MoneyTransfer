@@ -29,6 +29,10 @@
         {
           "currency": "USD",
           "amount": 50000
+        },
+        {
+          "currency": "GBP",
+          "amount": 51000
         }
       ]
     },
@@ -38,6 +42,14 @@
         {
           "currency": "USD",
           "amount": 200
+        },
+        {
+          "currency": "CAD",
+          "amount": 1244.55
+        },
+        {
+          "currency": "AUD",
+          "amount": 4998.99
         }
       ]
     }

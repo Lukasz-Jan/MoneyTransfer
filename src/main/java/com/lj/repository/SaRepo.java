@@ -17,4 +17,7 @@ public interface SaRepo extends CrudRepository<ServiceAgreement, Long> {
 
     @Query(value = "SELECT sa FROM ServiceAgreement sa JOIN FETCH sa.transactions")
     Iterable<ServiceAgreement> findAll();
+
+    @Query(value = "SELECT sa FROM ServiceAgreement sa where sa.account.acctId = :acctId and sa.currencyCd = :code")
+    Optional<ServiceAgreement> findAgreementForCurrency(@Param("acctId") String acctId, @Param("code") String currencyCode);
 }
