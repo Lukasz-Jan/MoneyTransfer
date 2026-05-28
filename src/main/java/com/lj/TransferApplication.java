@@ -7,7 +7,7 @@ package com.lj;
  */
 
 import java.io.IOException;
-import com.lj.services.initial.InitialDatabaseImporter;
+import com.lj.services.initial.DataImporter;
 import jakarta.annotation.PostConstruct;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.slf4j.Logger;
@@ -20,7 +20,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.mongodb.autoconfigure.MongoAutoConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
 import org.springframework.jms.core.JmsTemplate;
@@ -33,20 +32,16 @@ public class TransferApplication {
     private static final Logger log = LoggerFactory.getLogger(TransferApplication.class);
 
     private final String brokerUrl;
-    private final InitialDatabaseImporter accountSetUp;
+    private final DataImporter accountSetUp;
 
     @PostConstruct
     private void init() throws IOException {
-        try {
             accountSetUp.init();
-        } catch(DataIntegrityViolationException e) {
-            log.info("DataIntegrityViolationException while application init - expected while many consumers");
-        }
     }
 
     @Autowired
     public TransferApplication(@Value("${spring.activemq.broker-url}") String brokerUrl,
-                               InitialDatabaseImporter accountSetUp
+                               DataImporter accountSetUp
     ) {
         this.brokerUrl = brokerUrl;
         this.accountSetUp = accountSetUp;

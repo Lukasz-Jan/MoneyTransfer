@@ -7,12 +7,13 @@ import com.lj.entities.Transaction;
 import com.lj.gen.json.mappings.transfer.CurrencyAmount;
 import com.lj.gen.json.mappings.transfer.TransfersystemSchema;
 import com.lj.repository.AcctRepo;
-import com.lj.repository.SaRepo;
 import com.lj.services.FileFetchService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,28 +24,29 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 
 @Service
-public class InitialDatabaseImporter {
+public class DataImporter {
 
-    private static final Logger logger = LoggerFactory.getLogger(InitialDatabaseImporter.class);
+    private static final Logger logger = LoggerFactory.getLogger(DataImporter.class);
     private final AcctRepo accountRepo;
     private final File initDataFile;
     private final FileFetchService fileService;
+    private GenericApplicationContext context;
 
     @Autowired
-    public InitialDatabaseImporter(AcctRepo accountRepo,
-                                   @Value("${initDataFile}") String initFileName,
-                                   FileFetchService fileService) throws IOException {
+    public DataImporter(AcctRepo accountRepo,
+                        @Value("${initDataFile}") String initFileName,
+                        FileFetchService fileService,
+                        GenericApplicationContext context) throws IOException {
         this.fileService = fileService;
         this.initDataFile = this.fileService.fetchFile(initFileName);
         this.accountRepo = accountRepo;
+        this.context = context;
     }
 
-    @Transactional
     public void init() throws IOException {
 
         final ObjectMapper mapper = new ObjectMapper();
@@ -58,7 +60,7 @@ public class InitialDatabaseImporter {
 
             accountRepo.findById(acc.getAccountNumber()).ifPresentOrElse(
 
-                    account -> logger.info("Account " + account.getAcctId() + " already present "),
+                    account -> logger.info("Account " + account.getAcctId() + " already persisted "),
                     () -> {
 
                         logger.info("Adding account: " + acc.getAccountNumber());
@@ -70,19 +72,29 @@ public class InitialDatabaseImporter {
 
                         for (CurrencyAmount currencyAmount : acc.getCurrencyAmounts()) {
                             attachAgreementAndTransaction(currencyAmount.getCurrency(),
-                                    BigDecimal.valueOf(currencyAmount.getAmount()), acc.getAccountNumber(),
+                                    BigDecimal.valueOf(currencyAmount.getAmount()),
                                     creationDate, account);
                         }
 
-                        accountRepo.save(account);
-                        logger.info("Added account: " + acc.getAccountNumber());
+                        try {
+                            context.getBean(DataImporter.class).save(account);
+                            logger.info("Added account: " + acc.getAccountNumber());
+                        } catch (DataIntegrityViolationException e) {
+                            logger.info("ConstraintViolationException, account save " + account.getAcctId());
+                        }
                     }
             );
         }
         streamWithJson.close();
     }
 
-    private void attachAgreementAndTransaction(String currency, BigDecimal amount, String acctNo,
+
+    @Transactional
+    public void save(Account account) {
+        accountRepo.save(account);
+    }
+
+    private void attachAgreementAndTransaction(String currency, BigDecimal amount,
                                                Date creationDate, Account account) {
 
         ServiceAgreement sa = addSa(creationDate, currency, account);

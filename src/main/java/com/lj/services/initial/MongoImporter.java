@@ -12,24 +12,25 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Service;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 @Service
-public class InitialImportToMongo {
+public class MongoImporter {
 
-    private static final Logger logger = LoggerFactory.getLogger(InitialImportToMongo.class);
+    private static final Logger logger = LoggerFactory.getLogger(MongoImporter.class);
     private static final String TRANSFER_COLLECTION = "transfers";
     private final MongoTemplate mongo;
     private final FileFetchService fileRetriever;
     private final File linesFile;
 
     @Autowired
-    public InitialImportToMongo(MongoTemplate mongo, FileFetchService fileRetriever,
-                                @Value("${initFileLinesJson}") String jsonLinesFileName,
-                                @Value("${initDataFile}") String initialDataFileName) throws IOException {
+    public MongoImporter(MongoTemplate mongo, FileFetchService fileRetriever,
+                         @Value("${initFileLinesJson}") String jsonLinesFileName,
+                         @Value("${initDataFile}") String initialDataFileName) throws IOException {
         this.mongo = mongo;
         this.fileRetriever = fileRetriever;
         File initFile = this.fileRetriever.fetchFile(initialDataFileName);
@@ -49,7 +50,7 @@ public class InitialImportToMongo {
 
         List<String> lines = new ArrayList<>();
         List<AccountDoc> accountsList = new ArrayList<>();
-        for(com.lj.gen.json.mappings.transfer.Account acc: transfer.getAccounts()) {
+        for (com.lj.gen.json.mappings.transfer.Account acc : transfer.getAccounts()) {
             AccountDoc accountDocument = new AccountDoc(acc.getAccountNumber(), acc.getCurrencyAmounts());
             accountsList.add(accountDocument);
             lines.add(mapper.writeValueAsString(acc));
@@ -59,8 +60,8 @@ public class InitialImportToMongo {
     }
 
     private void writeLinesToFile(List<String> lines) {
-        try(BufferedWriter writer = new BufferedWriter(new FileWriter(linesFile.getPath()))) {
-            for(String line: lines) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(linesFile.getPath()))) {
+            for (String line : lines) {
                 writer.append(line + System.lineSeparator());
             }
         } catch (IOException e) {
@@ -78,8 +79,8 @@ public class InitialImportToMongo {
             Collection<AccountDoc> inserts = mongo.insert(mongoDocs, TRANSFER_COLLECTION);
             return inserts.size();
         } catch (DataIntegrityViolationException e) {
-            if (e.getCause() instanceof MongoBulkWriteException) {
-                return ((MongoBulkWriteException) e.getCause())
+            if (e.getCause() instanceof MongoBulkWriteException ex) {
+                return ex
                         .getWriteResult()
                         .getInsertedCount();
             }

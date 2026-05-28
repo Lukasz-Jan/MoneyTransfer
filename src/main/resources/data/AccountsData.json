@@ -52,6 +52,48 @@
           "amount": 4998.99
         }
       ]
+    },
+    {
+      "accountNumber": "777122224010",
+      "currencyAmounts": [
+        {
+          "currency": "JPN",
+          "amount": 344.88
+        },
+        {
+          "currency": "CNY",
+          "amount": 18984.00
+        },
+        {
+          "currency": "SEK",
+          "amount": 87753.11
+        }
+      ]
+    },
+    {
+      "accountNumber": "877122224010",
+      "currencyAmounts": [
+        {
+          "currency": "NOK",
+          "amount": 456344.88
+        },
+        {
+          "currency": "MXN",
+          "amount": 1898422.00
+        },
+        {
+          "currency": "SEK",
+          "amount": 1187753.11
+        },
+        {
+          "currency": "CAD",
+          "amount": 91244.55
+        },
+        {
+          "currency": "AUD",
+          "amount": 94998.99
+        }
+      ]
     }
   ]
 }

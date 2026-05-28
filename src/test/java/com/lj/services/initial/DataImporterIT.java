@@ -47,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(OrderAnnotation.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-public class InitialDatabaseImporterIT implements TestCommons {
+public class DataImporterIT implements TestCommons {
 
     @Autowired
     private SaRepo saRepo;
@@ -57,7 +57,7 @@ public class InitialDatabaseImporterIT implements TestCommons {
     private final File initializationDataFile;
 
     @Autowired
-    public InitialDatabaseImporterIT(@Value("${initDataFile}") String initFile) throws IOException {
+    public DataImporterIT(@Value("${initDataFile}") String initFile) throws IOException {
 
         String resourcePath = initFile;
         if(!initFile.contains("classpath:data")) {

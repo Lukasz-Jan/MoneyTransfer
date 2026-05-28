@@ -1,6 +1,5 @@
 package com.lj.services.initial;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.lj.entities.Account;
 import com.lj.entities.ServiceAgreement;
 import com.lj.gen.json.mappings.transfer.CurrencyAmount;
@@ -10,17 +9,16 @@ import com.lj.services.FileFetchService;
 import com.lj.services.jsonutils.Utils;
 import org.junit.jupiter.api.*;
 import org.mockito.Mockito;
-
+import org.springframework.context.support.GenericApplicationContext;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.*;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class InitialDatabaseImporterInitMethodTest {
+class DataImporterTest {
 
     private static final String RESOURCE_LOADER_PATH = "classpath:data/initAmountsForTest.json";
     private final Utils jsonHelper = new Utils();
@@ -28,16 +26,18 @@ public class InitialDatabaseImporterInitMethodTest {
     private final Map<String, Set<ServiceAgreement>> checkingAccountsAndAgreementsMap = new HashMap<>();
     private final HashMap<CompositeId, Double> checkingAccountedMoneyMap = new HashMap<>();
     private final FileFetchService fileServiceSimulate = new FileFetchService();
-    private InitialDatabaseImporter testedInstance;
+    private DataImporter testedInstance;
     private final File initializationDataFile;
+    private final GenericApplicationContext contextMock = mock(GenericApplicationContext.class);
 
-    public InitialDatabaseImporterInitMethodTest() throws IOException {
+    public DataImporterTest() throws IOException {
         initializationDataFile = fileServiceSimulate.fetchFile(RESOURCE_LOADER_PATH);
     }
 
     @BeforeAll
-    public void init() throws IOException {
-        testedInstance = new InitialDatabaseImporter(acctRepoMock, RESOURCE_LOADER_PATH, fileServiceSimulate);
+    void init() throws IOException {
+        testedInstance = new DataImporter(acctRepoMock, RESOURCE_LOADER_PATH, fileServiceSimulate, contextMock);
+        when(contextMock.getBean(DataImporter.class)).thenReturn(testedInstance);
     }
 
     @BeforeEach
@@ -46,11 +46,7 @@ public class InitialDatabaseImporterInitMethodTest {
         when(acctRepoMock.save(any(Account.class)))
                 .thenAnswer(invocation -> {
 
-
-
                     Account savedAccount = (Account) invocation.getArguments()[0];
-
-                    System.out.println("savedAccount: " + savedAccount.getAcctId());
 
                     for (ServiceAgreement agr : savedAccount.getAgreements()) {
 
@@ -79,9 +75,8 @@ public class InitialDatabaseImporterInitMethodTest {
         checkingAccountsAndAgreementsMap.clear();
     }
 
-
     @Test
-    public void givenMoneyAmounsInFile_whenServerInitialized_thenAccounted() throws IOException {
+    void givenMoneyAmounsInFile_whenServerInitialized_thenAccounted() throws IOException {
 
         testedInstance.init();
 
@@ -105,9 +100,8 @@ public class InitialDatabaseImporterInitMethodTest {
         }
     }
 
-
     @Test
-    public void givenAccountsInFile_whenServerStarted_thenSaveToPersistCalled() throws JsonProcessingException, IOException {
+    void givenAccountsInFile_whenServerStarted_thenSaveToPersistCalled() throws IOException {
 
         Set<com.lj.gen.json.mappings.transfer.Account> accountsInJson = jsonHelper.getAllJsonAccounts(initializationDataFile);
         assertNotNull(acctRepoMock);
@@ -117,7 +111,7 @@ public class InitialDatabaseImporterInitMethodTest {
     }
 
     @Test
-    public void givenAccountsInFile_whenServerStarted_then_AccountsAndAgreements_Saved() throws IOException {
+    void givenAccountsInFile_whenServerStarted_then_AccountsAndAgreements_Saved() throws IOException {
 
         testedInstance.init();
 
@@ -125,7 +119,7 @@ public class InitialDatabaseImporterInitMethodTest {
 
         for (com.lj.gen.json.mappings.transfer.Account transferAccount : allTransferAccounts) {
 
-            System.out.println("transferAccount.getAccountNumber(): " + transferAccount.getAccountNumber());
+
 
             Set<ServiceAgreement> persistedServiceAgreements = checkingAccountsAndAgreementsMap.get(transferAccount.getAccountNumber());
             assertEquals(persistedServiceAgreements.size(), transferAccount.getCurrencyAmounts().size());
