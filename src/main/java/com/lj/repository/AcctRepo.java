@@ -11,14 +11,23 @@ import com.lj.entities.*;
 @Repository
 public interface AcctRepo extends CrudRepository<Account, String> {
 
+
     @Query(value = "SELECT acc FROM Account acc JOIN FETCH acc.agreements where acc.acctId = :id")
     Optional<Account> findById(@Param("id") String id);
+
+
+    @Query(value = "SELECT acc FROM Account acc where acc.acctId = :id")
+    Optional<Account> customFindById(@Param("id") String id);
 
     @Query(value = "SELECT acc FROM Account acc JOIN FETCH acc.agreements")
     Set<Account> findAll();
 
-    @Query(value = "SELECT acc FROM Account acc   JOIN FETCH acc.agreements agr " +
+    @Query(value = "SELECT acc FROM Account acc JOIN FETCH acc.agreements agr " +
                                                 "JOIN FETCH agr.transactions tx " +
                                                 "where acc.acctId = :id")
     Account fetchAccountWithTransactions(String id);
+
+
+    @Query(value = "insert into CI_ACCT (acct_id, cre_Dttm, version) values (:acct_id, null, 0  ) on conflict (acct_id) do nothing returning acct_id;", nativeQuery = true)
+    Long insertAccount(@Param("acct_id") String id);
 }

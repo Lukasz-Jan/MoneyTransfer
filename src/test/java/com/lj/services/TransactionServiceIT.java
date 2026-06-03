@@ -17,13 +17,10 @@ import com.lj.dto.TransactionDto;
 import com.lj.entities.Account;
 import com.lj.entities.Transaction;
 import com.lj.repository.AcctRepo;
+import com.lj.repository.SaRepo;
 import com.lj.repository.TransactionRepo;
 import com.lj.services.jsonutils.Utils;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,11 +38,14 @@ import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.annotation.Rollback;
+import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, classes = TransferApplication.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(OrderAnnotation.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+//@Rollback(false)
 public class TransactionServiceIT {
 
     private static final Logger logger = LoggerFactory.getLogger(TransactionServiceIT.class);
@@ -58,15 +58,26 @@ public class TransactionServiceIT {
     private TransactionRepo trRepo;
     @Autowired
     private AcctRepo acctRepo;
+    @Autowired
+    private SaRepo saRepo;
 
     private final Utils jsonHelper;
 
     @BeforeAll
     public void init() throws IOException {
+
     }
 
     @AfterAll
     public void afterAll() throws IOException {
+
+    }
+
+    @Transactional
+    public void clearDatabase() {
+        trRepo.deleteAll();
+        acctRepo.deleteAll();
+        saRepo.deleteAll();
     }
 
     public TransactionServiceIT(@Value("${initDataFile}") String initFile) throws IOException {
@@ -95,7 +106,11 @@ public class TransactionServiceIT {
      * Operation result is checked (type OutcomeType) and balance.
      */
     @Test
+    @Order(1)
+    @Transactional
     public void testIncomeBasicOne() {
+
+
 
         BigDecimal income = BigDecimal.valueOf(1027.88);
 
@@ -123,6 +138,10 @@ public class TransactionServiceIT {
         BigDecimal afterIncomeShouldBe = beforeIncomeBalance.add(income);
 
         assertEquals(afterIncomeBalance, afterIncomeShouldBe);
+        System.out.println("TEST_1");
+//        System.out.println("acctRepo.findAll().size(): " + acctRepo.findAll().size());
+        clearDatabase();
+//        System.out.println("acctRepo.findAll().size(): " + acctRepo.findAll().size());
     }
 
     /*
@@ -133,7 +152,12 @@ public class TransactionServiceIT {
      */
 
     @Test
+    @Order(2)
+    @Transactional
     public void test_Outcome_Basic_Positive() throws IOException {
+
+        System.out.println("TEST_2");
+        System.out.println("acctRepo.findAll().size(): " + acctRepo.findAll().size());
 
         BigDecimal outcome = BigDecimal.valueOf(777.55);
         String inputAcctId = "100056013005";
@@ -164,6 +188,7 @@ public class TransactionServiceIT {
                 .map(a -> a.getTransactions())
                 .findAny()
                 .orElse(null);
+
         assertEquals(1, txs.size());
 
         BigDecimal balanceBefore = txs.iterator().next().getCurAmt();
@@ -187,6 +212,11 @@ public class TransactionServiceIT {
 
         BigDecimal afterExpenseShouldBe = balanceBefore.subtract(outcome);
         assertEquals(0, afterExpenseShouldBe.compareTo(afterExpenseBalance));
+
+
+//        System.out.println("acctRepo.findAll().size(): " + acctRepo.findAll().size());
+        clearDatabase();
+//        System.out.println("acctRepo.findAll().size(): " + acctRepo.findAll().size());
     }
 
     // Here no funds on account
@@ -201,7 +231,12 @@ public class TransactionServiceIT {
      */
 
     @Test
+    @Order(3)
+    @Transactional
     public void test_Outcome_Basic_Negative() throws IOException {
+
+//        System.out.println("TEST 3");
+//        System.out.println("acctRepo.findAll().size(): " + acctRepo.findAll().size());
 
         BigDecimal income = BigDecimal.valueOf(54055.55);
 
@@ -231,6 +266,7 @@ public class TransactionServiceIT {
 
         assertEquals(afterOutcomeShouldBe, afterOutcomeBalance);
 
+        clearDatabase();
     }
 
 
