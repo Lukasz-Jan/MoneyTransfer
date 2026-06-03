@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-curl -X POST localhost:8082/close
+#curl -X POST localhost:8082/close
 
 docker stop mongodb
 docker rm mongodb

@@ -8,6 +8,7 @@ import com.lj.gen.json.mappings.transfer.CurrencyAmount;
 import com.lj.gen.json.mappings.transfer.TransfersystemSchema;
 import com.lj.repository.AcctRepo;
 import com.lj.services.FileFetchService;
+import jakarta.persistence.EntityManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
@@ -24,6 +26,7 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 
@@ -53,45 +56,36 @@ public class DataImporter {
         final InputStream streamWithJson = new FileInputStream(initDataFile);
 
         TransfersystemSchema transfer = mapper.readValue(streamWithJson, TransfersystemSchema.class);
-        Date creationDate = new Date();
-
 
         for (com.lj.gen.json.mappings.transfer.Account acc : transfer.getAccounts()) {
-
-            accountRepo.findById(acc.getAccountNumber()).ifPresentOrElse(
-
-                    account -> logger.info("Account " + account.getAcctId() + " already persisted "),
-                    () -> {
-
-                        logger.info("Adding account: " + acc.getAccountNumber());
-                        Account account = Account.builder()
-                                .acctId(acc.getAccountNumber())
-                                .creDttm(creationDate)
-                                .agreements(new HashSet<>())
-                                .build();
-
-                        for (CurrencyAmount currencyAmount : acc.getCurrencyAmounts()) {
-                            attachAgreementAndTransaction(currencyAmount.getCurrency(),
-                                    BigDecimal.valueOf(currencyAmount.getAmount()),
-                                    creationDate, account);
-                        }
-
-                        try {
-                            context.getBean(DataImporter.class).save(account);
-                            logger.info("Added account: " + acc.getAccountNumber());
-                        } catch (DataIntegrityViolationException e) {
-                            logger.info("ConstraintViolationException, account save " + account.getAcctId());
-                        }
-                    }
-            );
+            Long id = context.getBean(DataImporter.class).initialSave(acc);
+            if (Objects.nonNull(id)) {
+                context.getBean(DataImporter.class).cascadeSave(acc);
+            }
         }
         streamWithJson.close();
     }
 
-
     @Transactional
-    public void save(Account account) {
-        accountRepo.save(account);
+    public Long initialSave(com.lj.gen.json.mappings.transfer.Account acc) {
+        return accountRepo.insertAccountOnConflictDoNothing(acc.getAccountNumber());
+    }
+
+    @Transactional()
+    public void cascadeSave(com.lj.gen.json.mappings.transfer.Account acc) {
+
+        Date creationDate = new Date();
+
+        Optional<Account> accOpt = accountRepo.customFindById(acc.getAccountNumber());
+
+        for (CurrencyAmount currencyAmount : acc.getCurrencyAmounts()) {
+            attachAgreementAndTransaction(currencyAmount.getCurrency(),
+                    BigDecimal.valueOf(currencyAmount.getAmount()),
+                    creationDate, accOpt.get());
+        }
+
+        accountRepo.save(accOpt.get());
+        logger.info("Account initialized " + acc.getAccountNumber());
     }
 
     private void attachAgreementAndTransaction(String currency, BigDecimal amount,
