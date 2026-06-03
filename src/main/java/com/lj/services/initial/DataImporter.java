@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 
@@ -57,9 +58,8 @@ public class DataImporter {
         TransfersystemSchema transfer = mapper.readValue(streamWithJson, TransfersystemSchema.class);
 
         for (com.lj.gen.json.mappings.transfer.Account acc : transfer.getAccounts()) {
-
-            Long id = context.getBean(DataImporter.class).onConflictDoNothingSave(acc);
-            if (id != null) {
+            Long id = context.getBean(DataImporter.class).initialSave(acc);
+            if (Objects.nonNull(id)) {
                 context.getBean(DataImporter.class).cascadeSave(acc);
             }
         }
@@ -67,8 +67,8 @@ public class DataImporter {
     }
 
     @Transactional
-    public Long onConflictDoNothingSave(com.lj.gen.json.mappings.transfer.Account acc) {
-        return accountRepo.insertAccount(acc.getAccountNumber());
+    public Long initialSave(com.lj.gen.json.mappings.transfer.Account acc) {
+        return accountRepo.insertAccountOnConflictDoNothing(acc.getAccountNumber());
     }
 
     @Transactional()
@@ -85,6 +85,7 @@ public class DataImporter {
         }
 
         accountRepo.save(accOpt.get());
+        logger.info("Account initialized " + acc.getAccountNumber());
     }
 
     private void attachAgreementAndTransaction(String currency, BigDecimal amount,

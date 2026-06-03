@@ -23,7 +23,7 @@ public class Transaction implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @ManyToOne
-    @JoinColumn(name = "SA_IDD", nullable = false)
+    @JoinColumn(name = "SA_ID", nullable = false)
     private ServiceAgreement sa;
 
     @Id
