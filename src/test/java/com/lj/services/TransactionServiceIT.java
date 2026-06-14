@@ -38,6 +38,7 @@ import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.transaction.annotation.Transactional;
 
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, classes = TransferApplication.class)
@@ -72,6 +73,18 @@ public class TransactionServiceIT {
 
     }
 
+    @AfterEach
+    public void afterEach() throws IOException {
+    }
+
+
+    public void deleteAll() {
+
+        acctRepo.deleteAll();
+        saRepo.deleteAll();
+        trRepo.deleteAll();
+    }
+
     public TransactionServiceIT(@Value("${initDataFile}") String initFile) throws IOException {
 
         String resourcePath = initFile;
@@ -99,6 +112,7 @@ public class TransactionServiceIT {
      */
     @Test
     @Order(1)
+    @Transactional
     public void testIncomeBasicOne() {
 
 
@@ -129,7 +143,10 @@ public class TransactionServiceIT {
         BigDecimal afterIncomeShouldBe = beforeIncomeBalance.add(income);
 
         assertEquals(afterIncomeBalance, afterIncomeShouldBe);
+
+        deleteAll();
     }
+
 
     /*
      * TransactionService::processRequest() operation is tested
@@ -140,8 +157,8 @@ public class TransactionServiceIT {
 
     @Test
     @Order(2)
+    @Transactional
     public void test_Outcome_Basic_Positive() throws IOException {
-
 
         BigDecimal outcome = BigDecimal.valueOf(777.55);
         String inputAcctId = "100056013005";

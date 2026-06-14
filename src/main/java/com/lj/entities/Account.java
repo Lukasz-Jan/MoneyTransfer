@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.NoArgsConstructor;
 import java.io.Serializable;
 import java.util.Date;
@@ -19,6 +20,7 @@ import java.util.Set;
 @Table(name = "CI_ACCT")
 @NamedQuery(name = "Account.findAll", query = "SELECT a FROM Account a")
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

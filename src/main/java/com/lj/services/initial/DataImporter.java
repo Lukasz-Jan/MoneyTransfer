@@ -24,10 +24,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Predicate;
 
 @Service
@@ -56,36 +53,45 @@ public class DataImporter {
         final InputStream streamWithJson = new FileInputStream(initDataFile);
 
         TransfersystemSchema transfer = mapper.readValue(streamWithJson, TransfersystemSchema.class);
+        Date creationDate = new Date();
+
 
         for (com.lj.gen.json.mappings.transfer.Account acc : transfer.getAccounts()) {
-            Long id = context.getBean(DataImporter.class).initialSave(acc);
-            if (Objects.nonNull(id)) {
-                context.getBean(DataImporter.class).cascadeSave(acc);
-            }
+
+            accountRepo.findById(acc.getAccountNumber()).ifPresentOrElse(
+
+                    account -> logger.info("Account " + account.getAcctId() + " already persisted "),
+                    () -> {
+
+                        logger.info("Adding account: " + acc.getAccountNumber());
+                        Account account = Account.builder()
+                                .acctId(acc.getAccountNumber())
+                                .creDttm(creationDate)
+                                .agreements(new HashSet<>())
+                                .build();
+
+                        for (CurrencyAmount currencyAmount : acc.getCurrencyAmounts()) {
+                            attachAgreementAndTransaction(currencyAmount.getCurrency(),
+                                    BigDecimal.valueOf(currencyAmount.getAmount()),
+                                    creationDate, account);
+                        }
+
+                        try {
+                            context.getBean(DataImporter.class).save(account);
+                            logger.info("Added account: " + acc.getAccountNumber());
+                        } catch (DataIntegrityViolationException e) {
+                            logger.info("ConstraintViolationException, account save " + account.getAcctId());
+                        }
+                    }
+            );
         }
         streamWithJson.close();
     }
 
+
     @Transactional
-    public Long initialSave(com.lj.gen.json.mappings.transfer.Account acc) {
-        return accountRepo.insertAccountOnConflictDoNothing(acc.getAccountNumber());
-    }
-
-    @Transactional()
-    public void cascadeSave(com.lj.gen.json.mappings.transfer.Account acc) {
-
-        Date creationDate = new Date();
-
-        Optional<Account> accOpt = accountRepo.customFindById(acc.getAccountNumber());
-
-        for (CurrencyAmount currencyAmount : acc.getCurrencyAmounts()) {
-            attachAgreementAndTransaction(currencyAmount.getCurrency(),
-                    BigDecimal.valueOf(currencyAmount.getAmount()),
-                    creationDate, accOpt.get());
-        }
-
-        accountRepo.save(accOpt.get());
-        logger.info("Account initialized " + acc.getAccountNumber());
+    public void save(Account account) {
+        accountRepo.save(account);
     }
 
     private void attachAgreementAndTransaction(String currency, BigDecimal amount,
@@ -119,26 +125,30 @@ public class DataImporter {
         }
     }
 
-    private ServiceAgreement addSa(Date creationDate, String currency, Account acctDto) {
+    private ServiceAgreement addSa(Date creationDate, String currency, Account acct) {
 
-        Optional<ServiceAgreement> saOpt = acctDto
-                .getAgreements().stream()
-                .filter(sa -> (sa.getCurrencyCd().equals(currency)))
-                .findFirst();
+        ServiceAgreement sa = ServiceAgreement.builder()
+                .creDttm(creationDate)
+                .currencyCd(currency)
+                .account(acct)
+                .transactions(new HashSet<>())
+                .build();
 
-        if (!saOpt.isPresent()) {
-            ServiceAgreement sa = ServiceAgreement.builder()
-                    .creDttm(creationDate)
-                    .currencyCd(currency)
-                    .account(acctDto)
-                    .transactions(new HashSet<>())
-                    .build();
+        Set<ServiceAgreement> agreements = acct.getAgreements();
 
-            acctDto.getAgreements()
-                    .add(sa);
-            return sa;
+        if (Objects.nonNull(agreements)) {
+            sa = agreements
+                    .stream()
+                    .filter(saEl -> (saEl.getCurrencyCd().equals(currency)))
+                    .findFirst()
+                    .orElse(sa);
         } else {
-            return saOpt.get();
+            agreements = new HashSet<ServiceAgreement>();
+            acct.setAgreements(agreements);
         }
+
+        acct.getAgreements().add(sa);
+
+        return sa;
     }
 }
