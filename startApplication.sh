@@ -1,17 +1,19 @@
 #!/bin/sh
 
-pomDirectory=`pwd`
+cp ./src/main/resources/envProperties/prod/postgres/application.properties ./src/main/resources/
 
-cd src/main/resources/envProperties/prod/postgres/
-cp application.properties ./../../..
+sh ./environment/dev/startMongoContainer.sh
 
-cd ${pomDirectory}
+mvn clean install
+#mvn clean install -Dmaven.test.skip
 
-mvn clean install -Dmaven.test.skip
+docker stop mongodb
+docker rm mongodb
 
 docker build -t "transfer_c1" .
 
 cd ./environment/compose
-  sh nodes_start.sh
-
+sh compose_start.sh
 cd ../..
+
+

@@ -13,11 +13,8 @@ import com.lj.repository.SaRepo;
 import com.lj.services.TestCommons;
 import com.lj.services.jsonutils.Utils;
 import org.hibernate.LazyInitializationException;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.function.Executable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,6 +24,10 @@ import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.io.File;
 import java.io.IOException;
@@ -47,6 +48,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(OrderAnnotation.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+@Testcontainers
 public class DataImporterIT implements TestCommons {
 
     @Autowired
@@ -55,6 +57,21 @@ public class DataImporterIT implements TestCommons {
     private AcctRepo acctRepo;
 
     private final File initializationDataFile;
+
+    private static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(
+            "postgres:17-alpine"
+    ).withDatabaseName("transfer_db");
+
+    static {
+        postgres.start();
+    }
+
+    @DynamicPropertySource
+    static void configureProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.username", postgres::getUsername);
+        registry.add("spring.datasource.password", postgres::getPassword);
+    }
 
     @Autowired
     public DataImporterIT(@Value("${initDataFile}") String initFile) throws IOException {
@@ -78,6 +95,11 @@ public class DataImporterIT implements TestCommons {
     @BeforeAll
     public void init() throws IOException {
         jsonHelper = new Utils();
+    }
+
+    @AfterAll
+    public void end() throws IOException {
+        postgres.stop();
     }
 
     /*

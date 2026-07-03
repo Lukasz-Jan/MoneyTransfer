@@ -38,7 +38,10 @@ import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.annotation.Transactional;
+import org.testcontainers.containers.PostgreSQLContainer;
 
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, classes = TransferApplication.class)
@@ -49,6 +52,10 @@ import org.springframework.transaction.annotation.Transactional;
 public class TransactionServiceIT {
 
     private static final Logger logger = LoggerFactory.getLogger(TransactionServiceIT.class);
+
+    private static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(
+            "postgres:17-alpine"
+    ).withDatabaseName("transfer_db");
 
     private final File resourceFile;
 
@@ -63,23 +70,33 @@ public class TransactionServiceIT {
 
     private final Utils jsonHelper;
 
+    static {
+        postgres.start();
+    }
+
+    @DynamicPropertySource
+    private static void configureProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.username", postgres::getUsername);
+        registry.add("spring.datasource.password", postgres::getPassword);
+    }
+
     @BeforeAll
     public void init() throws IOException {
-
     }
 
     @AfterAll
     public void afterAll() throws IOException {
-
+        postgres.stop();
     }
 
     @AfterEach
     public void afterEach() throws IOException {
+        deleteAll();
     }
 
 
     public void deleteAll() {
-
         acctRepo.deleteAll();
         saRepo.deleteAll();
         trRepo.deleteAll();
@@ -114,9 +131,6 @@ public class TransactionServiceIT {
     @Order(1)
     @Transactional
     public void testIncomeBasicOne() {
-
-
-
         BigDecimal income = BigDecimal.valueOf(1027.88);
 
         String account = "100056013005";
@@ -143,8 +157,6 @@ public class TransactionServiceIT {
         BigDecimal afterIncomeShouldBe = beforeIncomeBalance.add(income);
 
         assertEquals(afterIncomeBalance, afterIncomeShouldBe);
-
-        deleteAll();
     }
 
 
@@ -229,6 +241,7 @@ public class TransactionServiceIT {
 
     @Test
     @Order(3)
+    @Transactional
     public void test_Outcome_Basic_Negative() throws IOException {
 
 

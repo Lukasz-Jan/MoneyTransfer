@@ -12,7 +12,7 @@ if docker inspect "$container_name" > /dev/null 2>&1; then
         docker start mongodb
     fi
 else
-    echo "The container $container_name does not exist."
+    echo "The container $container_name does not exist - creating."
     # Create and start the container if it does not exist
     echo "Starting mongodb to build integration tests."
     docker run --name mongodb -p 27017:27017 -d mongodb/mongodb-community-server:latest

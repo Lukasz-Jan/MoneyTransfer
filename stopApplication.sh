@@ -1,7 +1,6 @@
 #!/bin/sh
 
-
 cd environment/compose/
-  sh nodes_stop.sh
+sh compose_stop.sh
 
 cd ../..
